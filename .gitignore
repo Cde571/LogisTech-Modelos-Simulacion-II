@@ -1,0 +1,35 @@
+# Datos descargados (no versionar)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Python y Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# Artefactos de modelos y resultados locales
+models/
+outputs/
+*.joblib
+*.pkl
+
+# LaTeX
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.synctex.gz
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

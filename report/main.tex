@@ -1,0 +1,96 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\title{Predicción temprana del tiempo de entrega y del retraso en pedidos de comercio electrónico}
+
+\author{Equipo LogisTech%
+\thanks{Modelos y Simulación de Sistemas II, Departamento de Ingeniería de Sistemas, Universidad de Antioquia.}%
+\thanks{TODO: reemplazar ``Equipo LogisTech'' por los nombres completos y correos institucionales de los integrantes.}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este trabajo propone un sistema de aprendizaje de máquina para anticipar, desde el momento de la compra, el tiempo de entrega de un pedido y la probabilidad de que llegue después de la fecha estimada. Se emplea el conjunto público de comercio electrónico de Olist y se formulan dos tareas supervisadas: regresión del tiempo de entrega en días y clasificación binaria del retraso. El Entregable I delimita el problema, describe la composición y preparación de los datos, propone una metodología reproducible y establece controles contra fuga de información. Los resultados cuantitativos se incorporarán únicamente después de ejecutar y validar los experimentos documentados en los notebooks.
+\end{abstract}
+
+\begin{IEEEkeywords}
+aprendizaje supervisado, comercio electrónico, logística, predicción de entregas, regresión, clasificación.
+\end{IEEEkeywords}
+
+\section{Introducción}
+La experiencia de entrega afecta la satisfacción del cliente, la carga de atención al usuario y la planeación logística. Una estimación temprana y confiable puede facilitar acciones preventivas, priorización operativa y comunicación proactiva. No obstante, el valor práctico de la predicción depende de respetar el instante en que se toma la decisión: para este proyecto solo son admisibles señales disponibles cuando se registra la compra.
+
+La pregunta de investigación es: \emph{¿Es posible predecir, desde el momento de la compra, cuánto tardará un pedido y si llegará después de la fecha estimada?} La contribución propuesta consiste en construir una tabla reproducible a nivel de pedido y evaluar dos salidas complementarias: una estimación continua de duración y una alerta binaria de retraso.
+
+\section{Descripción del problema}
+\subsection{Contexto y utilidad}
+Una predicción de días de entrega permite dimensionar la duración esperada, mientras que una clasificación de retraso expresa el riesgo respecto a la promesa comunicada al comprador. Las dos tareas no son equivalentes: un trayecto largo puede entregarse a tiempo si la promesa contempla esa duración, y uno corto puede incumplirse frente a una promesa más exigente. Por ello se estudiarán ambas salidas y se reportarán métricas propias de regresión y clasificación.
+
+\subsection{Descripción de la base de datos}
+Se usa \emph{Brazilian E-Commerce Public Dataset by Olist} \cite{olist2018dataset}, compuesto por cerca de cien mil pedidos efectuados en Brasil entre 2016 y 2018. La fuente distribuye tablas relacionales de pedidos, artículos, clientes, productos, pagos, vendedores, reseñas y geolocalización. La unidad analítica del proyecto será el pedido (`order\_id`); los artículos y pagos se agregarán antes de unir las tablas para evitar duplicar observaciones.
+
+Las variables candidatas conocidas al comprar incluyen estado y ciudad del cliente, categoría y dimensiones del producto, cantidades de artículos y vendedores, precio, flete, tipo y cuotas de pago, componentes calendáricos de la compra y ventana estimada de entrega. El notebook exploratorio calculará el número exacto de filas y variables después de cada filtro, las tasas de faltantes y las distribuciones; estas cifras no se fijan en el texto antes de ejecutar el pipeline sobre una versión identificada de los CSV.
+
+Los faltantes numéricos se imputarán con la mediana aprendida exclusivamente en entrenamiento y los categóricos con la categoría más frecuente. Las variables categóricas se codificarán mediante \emph{one-hot encoding} con categorías desconocidas ignoradas al transformar validación o prueba. Ninguna imputación ni codificación se ajustará sobre el conjunto completo.
+
+\subsection{Paradigma de aprendizaje}
+El proyecto adopta aprendizaje supervisado porque los pedidos entregados permiten derivar etiquetas históricas. Para regresión se define
+\begin{equation}
+y_{\mathrm{reg}} = \frac{t_{\mathrm{entrega}}-t_{\mathrm{compra}}}{86400},
+\end{equation}
+medido en días y denominado `delivery\_time\_days`. Para clasificación se define
+\begin{equation}
+y_{\mathrm{cls}} = \mathbb{I}\left(t_{\mathrm{entrega}}>t_{\mathrm{estimada}}\right),
+\end{equation}
+denominado `late\_delivery`. Solo los pedidos con las fechas requeridas pueden formar parte del conjunto etiquetado. Las duraciones negativas se consideran inválidas.
+
+\section{Estado del arte}
+La guía del curso exige revisar al menos cuatro artículos que aborden problemas semejantes, preferiblemente en revistas y, cuando sea posible, con la misma base. Para cada trabajo se documentarán el paradigma, las técnicas, la validación, las métricas y los resultados. Esta sección se mantiene deliberadamente sin afirmaciones bibliográficas hasta que el equipo complete una búsqueda verificable en IEEE Xplore, SpringerLink, ScienceDirect y Google Scholar.
+
+% TODO ARTÍCULO 1: verificar texto completo, DOI, revista y datos usados.
+% Resumir problema, modelo, validación, métricas y resultados sin copiar el abstract.
+\subsection{Trabajo relacionado 1 (TODO: referencia verificada)}
+TODO: síntesis crítica y relación con la predicción temprana de entregas.
+
+% TODO ARTÍCULO 2: verificar texto completo, DOI, revista y datos usados.
+\subsection{Trabajo relacionado 2 (TODO: referencia verificada)}
+TODO: síntesis crítica y diferencias en variables disponibles al predecir.
+
+% TODO ARTÍCULO 3: verificar texto completo, DOI, revista y datos usados.
+\subsection{Trabajo relacionado 3 (TODO: referencia verificada)}
+TODO: síntesis crítica de validación, métricas y resultados reportados.
+
+% TODO ARTÍCULO 4: verificar texto completo, DOI, revista y datos usados.
+\subsection{Trabajo relacionado 4 (TODO: referencia verificada)}
+TODO: síntesis crítica, limitaciones y aporte al diseño experimental propuesto.
+
+% TODO: condensar el estado del arte a un máximo de una página, como exige la guía.
+
+\section{Metodología propuesta}
+\subsection{Construcción de la tabla analítica}
+Se convertirán las fechas con control de errores, se construirán las dos etiquetas y se agregarán artículos y pagos a una fila por pedido. Después se unirán clientes y productos mediante las llaves documentadas por Olist. El pipeline verificará la unicidad de `order\_id`, mostrará faltantes y conservará un registro de las filas descartadas.
+
+\subsection{Prevención de fuga de información}
+El escenario de uso se fija en el instante de compra. Por tanto, `order\_delivered\_customer\_date`, `order\_delivered\_carrier\_date`, estado final del pedido, reseñas y las propias etiquetas quedan prohibidas como predictores. La fecha estimada comunicada al cliente sí existe al comprar; se representa como duración entre compra y fecha estimada. Los identificadores se excluyen para evitar memorización. Todas las transformaciones se ajustarán solo con entrenamiento mediante un \emph{Pipeline}.
+
+\subsection{Partición, líneas base y evaluación}
+Se propone una partición cronológica: los pedidos más antiguos forman entrenamiento y los más recientes prueba, aproximando el uso futuro y reduciendo contaminación temporal. Como líneas base iniciales se usarán regresión Ridge y regresión logística. El notebook calculará MAE, RMSE y $R^2$ para regresión; y exactitud balanceada, precisión, exhaustividad, $F_1$, ROC--AUC y matriz de confusión para clasificación. Si una clase es escasa, se priorizarán métricas sensibles al desbalance y se estudiará ponderación de clases.
+
+El Entregable II ampliará la comparación según la guía con un modelo paramétrico, uno no paramétrico, un ensamble de árboles, una red neuronal y una máquina de vectores de soporte. También incorporará búsqueda de hiperparámetros, resultados de entrenamiento, validación y prueba con intervalos de confianza, análisis individual de variables, PCA y UMAP sobre los dos mejores modelos.
+
+\section{Conclusiones preliminares}
+La formulación dual separa duración absoluta e incumplimiento de la promesa, dos aspectos útiles pero distintos. El principal riesgo metodológico es introducir información posterior a la compra; por ello el código centraliza una lista de variables prohibidas y una verificación automática. El siguiente paso es ejecutar el análisis con los CSV descargados, registrar tamaños y faltantes, completar el estado del arte con cuatro artículos reales y evaluar las líneas base sin anticipar resultados.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
