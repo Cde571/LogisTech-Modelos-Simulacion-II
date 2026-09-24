@@ -2,6 +2,12 @@
 
 Proyecto de **Modelos y Simulación de Sistemas II**. El repositorio deja preparado el Entregable I en formato IEEE Transactions y un flujo reproducible para estudiar la pregunta:
 
+## Documento del proyecto
+
+**[Abrir el informe compilado en PDF](report/main.pdf)**
+
+El código fuente editable está en [`report/main.tex`](report/main.tex).
+
 > ¿Es posible predecir, desde el momento de la compra, cuánto tardará un pedido y si llegará después de la fecha estimada?
 
 ## Objetivo
