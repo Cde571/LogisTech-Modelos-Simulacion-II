@@ -95,4 +95,4 @@ Por defecto se usan 15.000 pedidos distribuidos a lo largo de todo el periodo pa
 
 ## Estado del entregable
 
-La guía divide el proyecto en **dos entregables**. El informe actual cubre el Entregable II en sus tres bloques principales: (1) entrenamiento y evaluación, (2) reducción de dimensionalidad y (3) requisitos de entrega y sustentación. Incluye los resultados ejecutados, cuatro artículos de revista verificados, el enlace a Colab y las conclusiones. Antes de presentar, el equipo solo debe reemplazar `Equipo LogisTech` por los nombres de los integrantes y añadir el enlace del video de defensa de diez minutos cuando esté disponible.
+La guía divide el proyecto en **dos entregables**. El informe actual cubre el Entregable II en sus tres bloques principales: (1) entrenamiento y evaluación, (2) reducción de dimensionalidad y (3) requisitos de entrega y sustentación. Incluye los resultados ejecutados, cuatro artículos de revista verificados, el enlace a Colab y las conclusiones. Antes de presentar, el equipo solo debe añadir el enlace del video de defensa de diez minutos cuando esté disponible.
