@@ -1,6 +1,6 @@
 # LogisTech: predicción de entregas de comercio electrónico
 
-Proyecto de **Modelos y Simulación de Sistemas II**. El repositorio deja preparado el Entregable I en formato IEEE Transactions y un flujo reproducible para estudiar la pregunta:
+Proyecto de **Modelos y Simulación de Sistemas II**. El repositorio contiene el informe IEEE actualizado y el flujo reproducible del Entregable II para estudiar la pregunta:
 
 ## Documento del proyecto
 
@@ -73,10 +73,10 @@ python -m pip install -r requirements.txt
 1. Descargue los CSV en `data/raw/`.
 2. Inicie Jupyter con `jupyter lab` desde la raíz del repositorio.
 3. Ejecute en orden `notebooks/01_eda_preparacion_datos.ipynb` y `notebooks/02_modelado_inicial.ipynb`.
-4. Revise las estadísticas y métricas generadas localmente; el repositorio no afirma resultados que no hayan sido ejecutados.
+4. Revise las estadísticas, métricas y tablas generadas en `outputs/entregable_ii/`.
 5. Compile el reporte desde `report/` con `latexmk -pdf main.tex` o importe la carpeta `report/` en Overleaf.
 
-El primer notebook valida archivos, convierte fechas, construye los objetivos, agrega las tablas a nivel de pedido y analiza faltantes y distribuciones. El segundo crea particiones cronológicas y líneas base reproducibles con preprocesamiento aprendido únicamente sobre entrenamiento.
+El primer notebook valida archivos, convierte fechas, construye los objetivos, agrega las tablas a nivel de pedido y analiza faltantes y distribuciones. El segundo crea particiones cronológicas y líneas base reproducibles. El tercero ejecuta la comparación completa de modelos, intervalos de confianza y reducción dimensional.
 
 ## Entregable II en Google Colab
 
@@ -95,4 +95,4 @@ Por defecto se usan 15.000 pedidos distribuidos a lo largo de todo el periodo pa
 
 ## Estado del entregable
 
-`report/main.tex` contiene la redacción inicial del Entregable I y marcadores explícitos para completar el estado del arte con al menos cuatro artículos reales. Antes de la entrega final, el equipo debe verificar cada fuente, completar autores e integrantes y compilar el PDF. No se incluyen referencias bibliográficas inventadas.
+La guía divide el proyecto en **dos entregables**. El informe actual cubre el Entregable II en sus tres bloques principales: (1) entrenamiento y evaluación, (2) reducción de dimensionalidad y (3) requisitos de entrega y sustentación. Incluye los resultados ejecutados, cuatro artículos de revista verificados, el enlace a Colab y las conclusiones. Antes de presentar, el equipo solo debe reemplazar `Equipo LogisTech` por los nombres de los integrantes y añadir el enlace del video de defensa de diez minutos cuando esté disponible.
