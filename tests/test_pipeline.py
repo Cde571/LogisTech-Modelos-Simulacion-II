@@ -1,9 +1,10 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from src.entregable_ii import split_train_validation_test, temporal_sample
-from src.preprocessing import LEAKAGE_COLUMNS, assert_no_leakage, predictor_columns
+from src.preprocessing import LEAKAGE_COLUMNS, assert_no_leakage, modeling_frame, predictor_columns
 
 
 class PipelineIntegrityTests(unittest.TestCase):
@@ -39,6 +40,21 @@ class PipelineIntegrityTests(unittest.TestCase):
             [len(parts["X_train"]), len(parts["X_validation"]), len(parts["X_test"])],
             [600, 200, 200],
         )
+
+    def test_modeling_frame_normalizes_categorical_pd_na_for_colab(self):
+        frame = pd.DataFrame(
+            {
+                "customer_state": ["SP", pd.NA],
+                "delivery_time_days": [2.0, 3.0],
+                "late_delivery": pd.Series([0, 1], dtype="Int64"),
+                "order_purchase_timestamp": pd.to_datetime(
+                    ["2020-01-01", "2020-01-02"]
+                ),
+            }
+        )
+        X, _, _ = modeling_frame(frame, "delivery_time_days")
+        self.assertIsInstance(X.loc[1, "customer_state"], float)
+        self.assertTrue(np.isnan(X.loc[1, "customer_state"]))
 
 
 if __name__ == "__main__":

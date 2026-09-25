@@ -207,6 +207,12 @@ def modeling_frame(
     valid = dataset[target].notna() & dataset["order_purchase_timestamp"].notna()
     frame = dataset.loc[valid].sort_values("order_purchase_timestamp")
     X = frame[columns].copy()
+    # Algunas combinaciones de pandas/scikit-learn (incluido Colab) no pueden
+    # evaluar pd.NA dentro de SimpleImputer. Normalizar a np.nan conserva el
+    # significado y evita el error "boolean value of NA is ambiguous".
+    categorical = X.select_dtypes(include=["object", "category", "string"]).columns
+    for column in categorical:
+        X[column] = X[column].astype(object).where(X[column].notna(), np.nan)
     y = frame[target].astype("int64" if target == "late_delivery" else "float64")
     dates = frame["order_purchase_timestamp"].copy()
     return X, y, dates
