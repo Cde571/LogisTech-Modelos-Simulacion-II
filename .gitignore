@@ -1,6 +1,7 @@
 # Datos descargados (no versionar)
 data/raw/*
 data/processed/*
+data/*.zip
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 

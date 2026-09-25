@@ -44,7 +44,8 @@ También puede descargarlo manualmente desde Kaggle y extraer todos los CSV dent
 │   └── processed/           # salidas locales, ignoradas por Git
 ├── notebooks/
 │   ├── 01_eda_preparacion_datos.ipynb
-│   └── 02_modelado_inicial.ipynb
+│   ├── 02_modelado_inicial.ipynb
+│   └── 03_entregable_ii_completo_colab.ipynb
 ├── report/
 │   ├── main.tex
 │   ├── references.bib
@@ -76,6 +77,21 @@ python -m pip install -r requirements.txt
 5. Compile el reporte desde `report/` con `latexmk -pdf main.tex` o importe la carpeta `report/` en Overleaf.
 
 El primer notebook valida archivos, convierte fechas, construye los objetivos, agrega las tablas a nivel de pedido y analiza faltantes y distribuciones. El segundo crea particiones cronológicas y líneas base reproducibles con preprocesamiento aprendido únicamente sobre entrenamiento.
+
+## Entregable II en Google Colab
+
+Abra directamente [el Entregable II en Google Colab](https://colab.research.google.com/github/Cde571/LogisTech-Modelos-Simulacion-II/blob/main/notebooks/03_entregable_ii_completo_colab.ipynb) y use **Runtime → Run all**. El notebook descarga Olist automáticamente desde la API pública de Kaggle e instala sus dependencias; no requiere subir archivos ni escribir una clave de Kaggle.
+
+La corrida reproducible incluye:
+
+- cinco familias de modelos para regresión y clasificación: paramétrico, no paramétrico, ensamble, red neuronal y SVM;
+- validación cruzada temporal y mallas de hiperparámetros;
+- métricas de entrenamiento, validación y prueba, con intervalos de confianza;
+- importancia individual de variables;
+- PCA y UMAP sobre los dos mejores modelos seleccionados con validación;
+- exportación de tablas a `outputs/entregable_ii/`.
+
+Por defecto se usan 15.000 pedidos distribuidos a lo largo de todo el periodo para que la corrida termine en Colab CPU. Para utilizar todos los pedidos, cambie `MAX_ROWS = 15_000` por `MAX_ROWS = None`; esto incrementa considerablemente el tiempo de KNN, la red neuronal y UMAP.
 
 ## Estado del entregable
 
