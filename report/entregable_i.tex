@@ -1,0 +1,92 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,microtype}
+\usepackage{balance}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\title{Entregable I: predicción temprana del tiempo de entrega y del retraso en pedidos de comercio electrónico}
+\author{Cristian Echeverry, Esteban Andrés Castaño y Mateo Aguirre%
+\thanks{Modelos y Simulación de Sistemas II, Departamento de Ingeniería de Sistemas, Universidad de Antioquia (UdeA).}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este entregable formula un sistema de aprendizaje de máquina para anticipar, desde el momento de la compra, el tiempo de entrega de un pedido y la probabilidad de incumplir la fecha prometida. Se emplea el conjunto público de comercio electrónico de Olist, organizado como una base relacional de cerca de cien mil pedidos. Se definen dos tareas supervisadas complementarias: regresión de días hasta la entrega y clasificación binaria del retraso. La preparación propuesta agrega las tablas a una fila por pedido, trata faltantes dentro de un \emph{pipeline}, codifica variables categóricas y excluye toda señal posterior a la compra. El estado del arte revisa cuatro artículos de revista y sustenta la comparación posterior de modelos lineales, no paramétricos, ensambles, redes neuronales y máquinas de soporte vectorial.
+\end{abstract}
+
+\begin{IEEEkeywords}
+aprendizaje supervisado, comercio electrónico, logística, predicción de entregas, regresión, clasificación.
+\end{IEEEkeywords}
+
+\section{Descripción del problema}
+\subsection{Contexto, pregunta y utilidad}
+La experiencia de entrega afecta la satisfacción del cliente, la carga de atención y la planeación logística. La pregunta de investigación es: \emph{¿puede predecirse, al registrar una compra, cuánto tardará el pedido y si llegará después de la fecha estimada?} Una respuesta temprana permitiría priorizar pedidos, comunicar riesgos y planear capacidad antes de que ocurra el incumplimiento.
+
+Se plantean dos salidas complementarias. La regresión estima la duración absoluta; la clasificación expresa el riesgo respecto a la promesa. No son equivalentes: un envío largo puede llegar a tiempo si la promesa contempla esa duración, mientras uno corto puede incumplir una fecha más exigente.
+
+\subsection{Composición de la base de datos}
+Se usa \emph{Brazilian E-Commerce Public Dataset by Olist} \cite{olist2018dataset}, con 99\,441 pedidos realizados en Brasil entre 2016 y 2018. La fuente distribuye nueve archivos CSV relacionados mediante identificadores. La Tabla~\ref{tab:datos} resume su función. La unidad analítica elegida es el pedido (\texttt{order\_id}); artículos y pagos se agregan antes de unirlos para impedir la duplicación de observaciones.
+
+\begin{table}[t]
+\caption{Composición lógica del conjunto Olist.}
+\label{tab:datos}
+\centering\scriptsize
+\begin{tabular}{p{2.5cm}p{5.1cm}}
+\toprule
+Fuente & Contenido y uso \\
+\midrule
+Pedidos & Fechas de compra, promesa, despacho y entrega; construcción de etiquetas. \\
+Clientes & Ciudad, estado y código postal aproximado del destino. \\
+Artículos & Productos, vendedores, precio y flete; agregación por pedido. \\
+Productos & Categoría, dimensiones y peso; agregación por pedido. \\
+Pagos & Tipo, cuotas y valor; agregación por pedido. \\
+Vendedores & Localización de origen; conteos y diversidad por pedido. \\
+Reseñas & Evaluación posterior; se excluye para evitar fuga de información. \\
+Geolocalización & Coordenadas por prefijo postal; enriquecimiento opcional. \\
+Traducción & Equivalencias de categorías de portugués a inglés. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El flujo experimental utiliza una muestra temporal de 15\,000 pedidos distribuida uniformemente a lo largo del periodo para mantener representatividad histórica y permitir ejecución en Colab CPU. El código admite usar los 99\,441 pedidos cambiando un único parámetro. Entre los predictores disponibles al comprar están localización del cliente, categoría, peso y dimensiones agregadas del producto, número de artículos y vendedores, precio, flete, método y cuotas de pago, componentes calendáricos y duración de la promesa.
+
+\subsection{Faltantes, codificación y control de calidad}
+Los faltantes se concentran en atributos opcionales del producto, como categoría, peso y dimensiones; además, algunos pedidos carecen de fechas finales y no pueden producir una etiqueta. Se descartan únicamente registros sin las fechas indispensables o con duraciones negativas. Las variables numéricas restantes se imputan con la mediana del conjunto de entrenamiento y las categóricas con su moda. Después, los campos numéricos se estandarizan y los categóricos se convierten mediante \emph{one-hot encoding}, ignorando categorías nuevas en validación o prueba.
+
+Todas las transformaciones se aprenden exclusivamente con entrenamiento dentro de un \emph{pipeline}. Se excluyen identificadores, reseñas, estado final, fecha de entrega, fecha de despacho y cualquier señal generada después de comprar. La fecha estimada sí está disponible en ese instante y se representa como días prometidos desde la compra.
+
+\subsection{Paradigma y variables objetivo}
+Se adopta aprendizaje supervisado porque los pedidos históricos entregados permiten construir etiquetas observadas. Para regresión y clasificación se definen, respectivamente,
+\begin{equation}
+\begin{aligned}
+y_{reg}&=\frac{t_{entrega}-t_{compra}}{86400},\\
+y_{cls}&=\mathbb{I}(t_{entrega}>t_{estimada}).
+\end{aligned}
+\end{equation}
+La primera salida se mide en días; la segunda vale uno cuando existe retraso. La formulación dual permite evaluar el error de duración mediante MAE, RMSE y $R^2$, y el riesgo de retraso mediante exactitud balanceada, precisión, exhaustividad, $F_1$ y ROC--AUC. Debido al desbalance esperado, la exactitud simple no será el criterio principal.
+
+\section{Estado del arte}
+Wolter y Hanne \cite{wolter2024} compararon regresión lineal, SVM y redes neuronales para tiempos de servicio domiciliario. Usaron partición 80/20 y validación cruzada de cinco pliegues; la red obtuvo los mejores resultados y, en regresión, las configuraciones estables alcanzaron MAE de 8,5--9,5 minutos. También encontraron que PCA redujo el tiempo de entrenamiento y el error.
+
+Rokoss \emph{et al.} \cite{rokoss2024} estudiaron la determinación de fechas de entrega en producción de lotes pequeños mediante CRISP--DM, regresión y explicaciones SHAP. En 16\,361 órdenes, incorporar variables de dominio redujo RMSE de 9,5 a 7,7 días; predecir en una etapa más temprana aumentó el error cerca de 35\%, lo que evidencia la dificultad de restringir la información al instante de decisión.
+
+Hughes \emph{et al.} \cite{hughes2019} evaluaron regresión y clasificación de tiempos de parada de reparto a partir de GPS. Compararon modelos mediante MAPE y análisis de duración; KNN fue competitivo al clasificar umbrales. Chu \emph{et al.} \cite{chu2023} integraron predicción basada en datos con optimización de última milla: su enfoque \emph{predict-then-optimize} redujo alrededor de 5\% el costo frente a las alternativas de su estudio.
+
+Los cuatro trabajos justifican comparar modelos paramétricos, no paramétricos, ensambles, ANN y SVM; además, motivan validación temporal y reducción dimensional. El aporte diferencial propuesto es trabajar con Olist, limitar estrictamente los predictores al momento de compra y analizar simultáneamente duración e incumplimiento de la promesa.
+
+\section{Metodología propuesta y reproducibilidad}
+Los pedidos se ordenarán cronológicamente y se dividirán sin barajar en entrenamiento, validación y prueba futura. Los hiperparámetros se elegirán mediante validación temporal; el conjunto de prueba se reservará para una evaluación final con intervalos de confianza \emph{bootstrap}. El repositorio contiene validaciones de archivos, construcción de la tabla analítica y controles automáticos contra fuga de información. Código: \url{https://github.com/Cde571/LogisTech-Modelos-Simulacion-II}.
+
+\section{Conclusiones del Entregable I}
+El problema quedó delimitado como dos tareas supervisadas útiles y distintas. Se definieron unidad de análisis, muestra, predictores, etiquetas, tratamiento de faltantes y codificación sin fuga. El estado del arte respalda una evaluación multimetodológica y advierte que el instante de predicción y la deriva temporal condicionan el desempeño. El Entregable II debe ejecutar esta metodología, comparar las cinco familias y estudiar PCA y UMAP sobre los mejores modelos.
+
+\balance
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

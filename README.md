@@ -4,9 +4,11 @@ Proyecto de **Modelos y Simulación de Sistemas II**. El repositorio contiene el
 
 ## Documento del proyecto
 
-**[Abrir el informe compilado en PDF](report/main.pdf)**
+**[Abrir el Entregable I solicitado por la profesora](output/pdf/LogisTech_Entregable_I.pdf)**
 
-El código fuente editable está en [`report/main.tex`](report/main.tex).
+[Abrir el documento combinado de los Entregables I y II](report/main.pdf).
+
+Los códigos fuente editables están en [`report/entregable_i.tex`](report/entregable_i.tex) y [`report/main.tex`](report/main.tex).
 
 > ¿Es posible predecir, desde el momento de la compra, cuánto tardará un pedido y si llegará después de la fecha estimada?
 
