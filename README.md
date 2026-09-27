@@ -4,7 +4,7 @@ Proyecto de **Modelos y Simulación de Sistemas II**. El repositorio contiene el
 
 ## Documento del proyecto
 
-**[Abrir el Entregable I solicitado por la profesora](output/pdf/LogisTech_Entregable_I.pdf)**
+**[Abrir el Entregable I ](output/pdf/LogisTech_Entregable_I.pdf)**
 
 **[Abrir el Entregable II experimental](output/pdf/LogisTech_Entregable_II.pdf)**
 
