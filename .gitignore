@@ -1,0 +1,39 @@
+# Datos descargados (no versionar)
+data/raw/*
+data/*.zip
+!data/raw/.gitkeep
+
+# Python y Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+tmp/
+
+# Artefactos de modelos y resultados locales
+models/
+outputs/
+*.joblib
+*.pkl
+
+# LaTeX
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.synctex.gz
+report/*.pdf
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Material del curso (no versionar)
+guia_proyecto_del_curso_202602.pdf
