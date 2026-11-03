@@ -38,12 +38,25 @@ El dataset no se versiona por tamaño. Instrucciones de descarga en [`data/READM
 │   ├── README.md                        # Instrucciones de descarga de Olist
 │   └── raw/                             # CSV de Olist (ignorado por Git)
 ├── notebook/
-│   └── 01_eda.ipynb                     # Análisis exploratorio reproducible
+│   ├── 01_eda.ipynb                     # Análisis exploratorio reproducible
+│   ├── 02_modelado_inicial.ipynb        # Líneas base Ridge/LogReg con holdout temporal
+│   └── 03_experimentos.ipynb            # Pipeline completo del Entregable II
 ├── report/
 │   ├── entregable_i.tex                 # Fuente LaTeX del reporte
+│   ├── entregable_ii.tex                # Fuente LaTeX del Entregable II
 │   └── references.bib                   # Bibliografía
-└── src/
-    └── preprocessing.py                 # Carga, agregación y targets de Olist
+├── scripts/
+│   └── generate_report_figures.py       # Figuras del reporte desde outputs CSV
+├── src/
+│   ├── preprocessing.py                 # Carga, agregación y targets de Olist
+│   ├── encoders.py                      # FrequencyEncoder + preprocesador diferenciado
+│   ├── splits.py                        # Muestreo temporal y partición 60/20/20
+│   ├── models.py                        # ExperimentConfig y catálogo de modelos
+│   ├── evaluation.py                    # CV temporal, bootstrap, importancia y reducción
+│   └── experiments.py                   # run_task: orquestador reproducible
+└── tests/
+    ├── test_pipeline.py                 # Pruebas rápidas de integridad
+    └── test_smoke.py                    # Smoke-test end-to-end (SMOKE=1)
 ```
 
 ## Reproducir el análisis
