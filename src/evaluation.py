@@ -311,7 +311,7 @@ def reduction_comparison(
     for reducer_name, reducer in reducers.items():
         fit_limit = min(10_000, len(X_dev)) if reducer_name.startswith("UMAP") else len(X_dev)
         fit_index = np.linspace(0, len(X_dev) - 1, fit_limit, dtype=int)
-        reducer.fit(X_dev[fit_index], y_development.iloc[fit_index])
+        reducer.fit(X_dev[fit_index])
         reduced_dev = reducer.transform(X_dev)
         reduced_test = reducer.transform(X_test)
         for family in top_models:
