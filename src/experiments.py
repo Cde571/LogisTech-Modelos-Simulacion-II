@@ -40,8 +40,8 @@ def run_task(
     importance = feature_analysis(
         task,
         fitted[champion],
-        parts["X_test"],
-        parts["y_test"],
+        parts["X_validation"],
+        parts["y_validation"],
         config.random_state,
     )
     reductions = reduction_comparison(task, parts, ranking, best, config)
