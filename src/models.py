@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
@@ -37,6 +38,10 @@ class ExperimentConfig:
 def model_catalog(task: str, random_state: int) -> dict[str, tuple[Any, dict[str, list[Any]]]]:
     if task == "regression":
         return {
+            "Baseline trivial (mediana)": (
+                DummyRegressor(strategy="median"),
+                {"strategy": ["median"]},
+            ),
             "Ridge (parametrico)": (Ridge(solver="lsqr"), {"alpha": [0.1, 10.0]}),
             "KNN (no parametrico)": (
                 KNeighborsRegressor(n_jobs=-1),
@@ -63,6 +68,10 @@ def model_catalog(task: str, random_state: int) -> dict[str, tuple[Any, dict[str
         }
     if task == "classification":
         return {
+            "Baseline trivial (clase mayoritaria)": (
+                DummyClassifier(strategy="most_frequent", random_state=random_state),
+                {"strategy": ["most_frequent"]},
+            ),
             "Logistica (parametrico)": (
                 LogisticRegression(
                     max_iter=1_000, class_weight="balanced", random_state=random_state
