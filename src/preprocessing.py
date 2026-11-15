@@ -184,6 +184,11 @@ def predictor_columns(dataset: pd.DataFrame) -> list[str]:
         "purchase_dayofweek",
         "purchase_hour",
         "estimated_delivery_days",
+        "customer_lat",
+        "customer_lon",
+        "mean_customer_seller_distance_km",
+        "max_customer_seller_distance_km",
+        "sellers_with_coordinates",
     ]
     selected = [column for column in candidates if column in dataset]
     assert_no_leakage(selected)
