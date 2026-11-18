@@ -9,7 +9,7 @@ Proyecto de **Modelos y Simulación de Sistemas II** (Universidad de Antioquia).
 | Nº | Contenido | Documento | Notebook principal |
 |----|-----------|-----------|--------------------|
 | I  | Formulación del problema y estado del arte | [`Entregable_I.pdf`](Entregable_I.pdf) · [`report/entregable_i.tex`](report/entregable_i.tex) | [`notebook/01_eda.ipynb`](notebook/01_eda.ipynb) |
-| II | Modelos, validación y resultados | [`report/entregable_ii.tex`](report/entregable_ii.tex) | [`notebook/03_entregable_ii.ipynb`](notebook/03_entregable_ii.ipynb) (pendiente) |
+| II | Modelos, validación y resultados | [`report/entregable_ii.tex`](report/entregable_ii.tex) | [`notebook/03_entregable_ii.ipynb`](notebook/03_entregable_ii.ipynb) |
 
 Los notebooks son el artefacto reproducible que se revisa. Los scripts en
 [`scripts/`](scripts/) son utilidades para correr el pipeline fuera del
@@ -45,9 +45,11 @@ tamaño; instrucciones de descarga en [`data/README.md`](data/README.md).
 ├── notebook/                             # artefactos de revisión
 │   ├── 01_eda.ipynb
 │   ├── 02_modelado_inicial.ipynb
-│   ├── 03_entregable_ii.ipynb            # (se consolida con el experimento ganador)
+│   ├── 03_entregable_ii.ipynb            # consolidación final del entregable
 │   └── experimentos/
-│       └── 01_baseline_pre_compra.ipynb
+│       ├── 01_baseline_pre_compra.ipynb
+│       ├── 02_distancia_geografica.ipynb
+│       └── 03_seleccion_robusta.ipynb
 ├── report/
 │   ├── entregable_i.tex
 │   ├── entregable_ii.tex
@@ -61,7 +63,11 @@ tamaño; instrucciones de descarga en [`data/README.md`](data/README.md).
 │   └── experiments.py                    # run_task: orquestador
 ├── scripts/
 │   ├── experimentos/
-│   │   └── 01_baseline_pre_compra.py     # baseline con predictores pre-compra
+│   │   ├── 01_baseline_pre_compra.py     # baseline con predictores pre-compra
+│   │   ├── 02_distancia_geografica.py    # añade distancia cliente-vendedor
+│   │   └── 03_seleccion_robusta.py       # criterio robusto (peor pliegue CV)
+│   ├── analisis/
+│   │   └── tasa_retraso_por_particion.py # reporta el shift temporal
 │   └── generate_report_figures.py
 ├── outputs/                              # resultados locales (CSV + README)
 │   ├── entregable_ii/                    # resultado FINAL (el que se califica)
@@ -101,10 +107,12 @@ salvo los `README.md` que documentan cada experimento.
 
 3. Correr los notebooks en orden desde `notebook/`.
 
-Para ejecutar el baseline sin abrir Jupyter:
+Para ejecutar los experimentos sin abrir Jupyter:
 
 ```bash
 python scripts/experimentos/01_baseline_pre_compra.py --max-rows 15000
+python scripts/experimentos/02_distancia_geografica.py --max-rows 15000
+python scripts/experimentos/03_seleccion_robusta.py   --max-rows 15000
 ```
 
 ## Pruebas
