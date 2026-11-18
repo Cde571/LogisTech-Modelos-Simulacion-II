@@ -93,6 +93,7 @@ def tune_models(
     splitter = TimeSeriesSplit(n_splits=config.cv_splits)
     catalog = model_catalog(task, config.random_state)
 
+    criterion = config.selection_criterion
     for family, (estimator, grid) in catalog.items():
         family_best_score = -np.inf
         for params in ParameterGrid(grid):
@@ -115,11 +116,13 @@ def tune_models(
                 fold_metric_rows.append(metrics)
                 fold_scores.append(_primary_value(task, metrics))
             mean_score = float(np.mean(fold_scores))
+            worst_score = float(np.min(fold_scores))
             standard_error = float(np.std(fold_scores, ddof=1) / sqrt(len(fold_scores)))
             row: dict[str, Any] = {
                 "model": family,
                 "params": params,
                 "primary_cv_mean": mean_score,
+                "primary_cv_worst": worst_score,
                 "primary_cv_ci95_low": mean_score - 1.96 * standard_error,
                 "primary_cv_ci95_high": mean_score + 1.96 * standard_error,
                 "fit_seconds": perf_counter() - started,
@@ -129,10 +132,17 @@ def tune_models(
                     np.mean([value[metric_name] for value in fold_metric_rows])
                 )
             rows.append(row)
-            if mean_score > family_best_score:
-                family_best_score = mean_score
-                best[family] = {"estimator": clone(estimator), "params": params}
-    results = pd.DataFrame(rows).sort_values("primary_cv_mean", ascending=False)
+            chosen = worst_score if criterion == "worst" else mean_score
+            if chosen > family_best_score:
+                family_best_score = chosen
+                best[family] = {
+                    "estimator": clone(estimator),
+                    "params": params,
+                    "cv_mean": mean_score,
+                    "cv_worst": worst_score,
+                }
+    sort_column = "primary_cv_worst" if criterion == "worst" else "primary_cv_mean"
+    results = pd.DataFrame(rows).sort_values(sort_column, ascending=False)
     return results.reset_index(drop=True), best
 
 
@@ -205,6 +215,8 @@ def fit_best_and_test(
         row: dict[str, Any] = {
             "model": family,
             "best_params": specification["params"],
+            "cv_mean": specification.get("cv_mean"),
+            "cv_worst": specification.get("cv_worst"),
             "fit_seconds": perf_counter() - started,
         }
         for split_name, metrics in (
@@ -235,8 +247,12 @@ def fit_best_and_test(
             row.update({"test_primary": test_metrics["ROC_AUC"], "test_ci95_low": low, "test_ci95_high": high})
         fitted[family] = final_pipeline
         rows.append(row)
-    order = "validation_MAE" if task == "regression" else "validation_ROC_AUC"
-    ascending = task == "regression"
+    if config.selection_criterion == "worst":
+        order = "cv_worst"
+        ascending = False
+    else:
+        order = "validation_MAE" if task == "regression" else "validation_ROC_AUC"
+        ascending = task == "regression"
     return pd.DataFrame(rows).sort_values(order, ascending=ascending).reset_index(drop=True), fitted
 
 

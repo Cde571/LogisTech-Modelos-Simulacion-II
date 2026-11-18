@@ -33,6 +33,7 @@ class ExperimentConfig:
     min_frequency: int = 20
     low_cardinality_max: int = 30
     high_cardinality_min: int = 100
+    selection_criterion: str = "mean"
 
 
 def model_catalog(task: str, random_state: int) -> dict[str, tuple[Any, dict[str, list[Any]]]]:
