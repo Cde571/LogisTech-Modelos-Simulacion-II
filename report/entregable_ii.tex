@@ -10,7 +10,7 @@
 \usepackage[hidelinks]{hyperref}
 \graphicspath{{figures/}}
 
-\title{Entregable II: predicción temprana del tiempo de entrega y del retraso en pedidos de comercio electrónico}
+\title{Predicción temprana del tiempo de entrega y del retraso en pedidos de comercio electrónico}
 \author{Cristian Echeverry, Esteban Andrés Castaño y Mateo Aguirre%
 \thanks{Modelos y Simulación de Sistemas II, Departamento de Ingeniería de Sistemas, Universidad de Antioquia (UdeA).}}
 
@@ -100,7 +100,7 @@ y_{reg}&=\frac{t_{entrega}-t_{compra}}{86400},\\
 y_{cls}&=\mathbb{I}(t_{entrega}>t_{estimada}).
 \end{aligned}
 \end{equation}
-La primera salida se mide en días; la segunda vale uno cuando existe retraso. La formulación dual permite evaluar el error de duración mediante el error absoluto medio (MAE, \textit{mean absolute error}), la raíz del error cuadrático medio (RMSE, \textit{root mean squared error}) y el coeficiente de determinación $R^2$; y el riesgo de retraso mediante exactitud balanceada, precisión, exhaustividad, medida $F_1$ y el área bajo la curva característica operativa del receptor (ROC--AUC, \textit{receiver operating characteristic -- area under the curve}). Debido al desbalance esperado, la exactitud simple no será el criterio principal.
+La primera salida se mide en días; la segunda vale uno cuando existe retraso. La formulación dual permite evaluar el error de duración mediante el error absoluto medio (MAE, \textit{mean absolute error}), la raíz del error cuadrático medio (RMSE, \textit{root mean squared error}) y el coeficiente de determinación $R^2$; y el riesgo de retraso mediante exactitud balanceada, precisión, exhaustividad, medida $F_1$ y el área bajo la curva característica operativa del receptor (ROC-AUC, \textit{receiver operating characteristic -- area under the curve}). Debido al desbalance esperado, la exactitud simple no será el criterio principal.
 
 \section{Estado del arte}
 \begin{table*}[!t]
@@ -141,21 +141,21 @@ Los cuatro trabajos justifican comparar modelos paramétricos, no paramétricos,
 
 El protocolo de evaluación respeta el orden cronológico de los pedidos para evitar fuga de información temporal. La tabla analítica se ordena por \texttt{order\_purchase\_timestamp} y se divide en partes contiguas 60/20/20 de entrenamiento, validación y prueba. La selección de hiperparámetros se realiza con validación cruzada temporal (\textit{TimeSeriesSplit}, tres pliegues) aplicada sobre el conjunto de entrenamiento, de modo que ningún pliegue de ajuste contenga pedidos posteriores a los de su pliegue de evaluación. Las métricas sobre prueba se acompañan de un intervalo de confianza al 95\% obtenido por \textit{bootstrap} con 500 iteraciones, siguiendo la recomendación de Bergmeir y Benítez~\cite{bergmeir2012} de combinar validación temporal con remuestreo para estimar la incertidumbre en series dependientes y de Varma y Simon~\cite{varma2006} de separar la selección del modelo de la estimación final del error. La configuración cuantitativa queda en \texttt{src/models.py:ExperimentConfig}: \texttt{random\_state=42}, \texttt{cv\_splits=3}, \texttt{bootstrap\_iterations=500}. No se aplicó sobre- ni sub-muestreo; para la clase minoritaria de retraso se usaron pesos de clase balanceados en los modelos que lo admiten (\texttt{class\_weight="balanced"} en regresión logística y SVM lineal; \texttt{class\_weight="balanced\_subsample"} en bosque aleatorio).
 
-La configuración final se construye en dos pasos. Primero se consolida un \emph{pipeline} de preparación con imputación por mediana (numéricas) y moda (categóricas), estandarización $z$ y la codificación diferenciada descrita en la Sección~I; este bloque corresponde al experimento \emph{baseline}. Segundo, se enriquece el espacio predictor con señales geográficas derivadas de \texttt{olist\_geolocation\_dataset}: coordenadas aproximadas del cliente (\texttt{customer\_lat}, \texttt{customer\_lon}) y distancia esférica cliente--vendedor media y máxima por pedido (\texttt{mean\_customer\_seller\_distance\_km}, \texttt{max\_customer\_seller\_distance\_km}), cubriendo el 98,7\% de los pedidos con geocódigo válido. La distancia se calcula con la fórmula de Haversine~\cite{sinnott1984},
+La configuración final se construye en dos pasos. Primero se consolida un \emph{pipeline} de preparación con imputación por mediana (numéricas) y moda (categóricas), estandarización $z$ y la codificación diferenciada descrita en la Sección~I; este bloque corresponde al experimento \emph{baseline}. Segundo, se enriquece el espacio predictor con señales geográficas derivadas de \texttt{olist\_geolocation\_dataset}: coordenadas aproximadas del cliente (\texttt{customer\_lat}, \texttt{customer\_lon}) y distancia esférica cliente-vendedor, media y máxima por pedido, (\texttt{mean\_customer\_seller\_distance\_km}, \texttt{max\_customer\_seller\_distance\_km}), cubriendo el 98,7\% de los pedidos con geocódigo válido. La distancia se calcula con la fórmula de Haversine~\cite{sinnott1984},
 \begin{equation}
 d=2R\arcsin\!\sqrt{\sin^2\!\tfrac{\Delta\varphi}{2}+\cos\varphi_1\cos\varphi_2\sin^2\!\tfrac{\Delta\lambda}{2}},
 \label{eq:haversine}
 \end{equation}
-donde $\varphi$ y $\lambda$ son latitud y longitud en radianes y $R=6371{,}0$~km es el radio medio terrestre. La elección se justifica por tres razones: la aproximación euclidiana sobre grados sufre distorsión relevante en Brasil (cuyo territorio cubre cerca de 40$^\circ$ de latitud), la distancia sobre gran círculo correlaciona estrechamente con la distancia real por carretera a escala agregada --evidencia reportada por Boscoe \emph{et al.}~\cite{boscoe2012} en un estudio nacional-- y la fórmula es reproducible sin dependencias externas, requisito que Wong \emph{et al.}~\cite{wong2026} también observan al incorporar Haversine como predictor en modelos híbridos de logística urbana.
+donde $\varphi$ y $\lambda$ son latitud y longitud en radianes y $R=6371{,}0$~km es el radio medio terrestre. La elección se justifica por tres razones: la aproximación euclidiana sobre grados sufre distorsión relevante en Brasil (cuyo territorio cubre cerca de 40$^\circ$ de latitud), la distancia sobre gran círculo correlaciona estrechamente con la distancia real por carretera a escala agregada, evidencia reportada por Boscoe \emph{et al.}~\cite{boscoe2012} en un estudio nacional, y la fórmula es reproducible sin dependencias externas, requisito que Wong \emph{et al.}~\cite{wong2026} también observan al incorporar Haversine como predictor en modelos híbridos de logística urbana.
 
-Se evalúan cinco familias de modelos exigidas por la guía del curso --paramétrica, no paramétrica, ensamble de árboles, red neuronal y máquina de vectores de soporte-- más un baseline trivial (\texttt{DummyRegressor} con la mediana del entrenamiento y \texttt{DummyClassifier} con la clase mayoritaria) que sirve de referencia mínima. La Tabla~\ref{tab:hiperparametros} resume la malla explorada para cada combinación modelo-tarea.
+Se evalúan cinco familias de modelos exigidas por la guía del curso (paramétrica, no paramétrica, ensamble de árboles, red neuronal y máquina de vectores de soporte) más un baseline trivial (\texttt{DummyRegressor} con la mediana del entrenamiento y \texttt{DummyClassifier} con la clase mayoritaria) que sirve de referencia mínima. La Tabla~\ref{tab:hiperparametros} resume la malla explorada para cada combinación de modelo y tarea.
 
 \begin{table}[t]
 \caption{Modelos evaluados y malla de hiperparámetros explorada durante la validación cruzada temporal. Las mallas son comunes a los tres experimentos; el único cambio entre ellos es el conjunto de predictores y el criterio de selección (media del CV frente a peor pliegue).}
 \label{tab:hiperparametros}
 \centering\scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{p{1.6cm}p{1.6cm}p{0.6cm}p{3.1cm}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{1.2cm}p{1.95cm}p{0.65cm}p{3.5cm}@{}}
 \toprule
 Familia & Modelo & Tarea & Hiperparámetros y malla \\
 \midrule
@@ -173,7 +173,7 @@ SVM & LinearSVC & Clas. & $C\in\{0{,}1;\ 1;\ 10\}$ \\
 \end{tabular}
 \end{table}
 
-Las métricas de desempeño se eligen alineadas al tipo de salida. Para regresión se reporta el error absoluto medio (MAE, \textit{mean absolute error}) como métrica primaria, por su interpretación directa en días; se acompaña con RMSE y $R^2$ para distinguir sesgo y capacidad explicativa. Para clasificación se reporta ROC--AUC como métrica primaria, por ser invariante al umbral de decisión y adecuada para la clase minoritaria del retraso, y se acompaña con exactitud balanceada, precisión, exhaustividad, $F_1$ y \textit{average precision} para caracterizar el compromiso entre falsos positivos y falsos negativos. La exactitud simple se descarta por el desbalance esperado (cerca del 8\% de pedidos con retraso en entrenamiento).
+Las métricas de desempeño se eligen alineadas al tipo de salida. Para regresión se reporta el error absoluto medio (MAE, \textit{mean absolute error}) como métrica primaria, por su interpretación directa en días; se acompaña con RMSE y $R^2$ para distinguir sesgo y capacidad explicativa. Para clasificación se reporta ROC-AUC como métrica primaria, por ser invariante al umbral de decisión y adecuada para la clase minoritaria del retraso, y se acompaña con exactitud balanceada, precisión, exhaustividad, $F_1$ y \textit{average precision} para caracterizar el compromiso entre falsos positivos y falsos negativos. La exactitud simple se descarta por el desbalance esperado (cerca del 8\% de pedidos con retraso en entrenamiento).
 
 \subsection{Resultados del entrenamiento}
 \label{sec:resultados}
@@ -206,22 +206,22 @@ Peor pliegue & Random Forest & 4,14 [4,09; 4,20] & Random Forest \quad 0,637 [0,
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{roc_auc_ic95.pdf}
-\caption{ROC--AUC sobre prueba con IC95\% del \textit{bootstrap} para cada familia en la configuración principal. La línea discontinua marca el baseline trivial de clase mayoritaria (0,5).}
+\caption{ROC-AUC sobre prueba con IC95\% del \textit{bootstrap} para cada familia en la configuración principal. La línea discontinua marca el baseline trivial de clase mayoritaria (0,5).}
 \label{fig:auc}
 \end{figure}
 
-El baseline establece un piso informativo: todos los modelos de regresión superan al baseline trivial de mediana (MAE 4,96 días) y a Ridge (5,07), lo que confirma que el pipeline aprende señal por encima de una regla sin predictores. En clasificación, en cambio, Random Forest y MLP superan al trivial en CV y validación pero no de forma estable en prueba, mientras que la logística y la LinearSVC alcanzan ROC--AUC entre 0,71 y 0,72 en prueba a pesar de no ser elegidas por la media del CV.
+El baseline establece un piso informativo: todos los modelos de regresión superan al baseline trivial de mediana (MAE 4,96 días) y a Ridge (5,07), lo que confirma que el pipeline aprende señal por encima de una regla sin predictores. En clasificación, en cambio, Random Forest y MLP superan al trivial en CV y validación pero no de forma estable en prueba, mientras que la logística y la LinearSVC alcanzan ROC-AUC entre 0,71 y 0,72 en prueba a pesar de no ser elegidas por la media del CV.
 
-La incorporación de la distancia cliente--vendedor reduce ligeramente el MAE del campeón de regresión (3,98 $\to$ 3,92 días; los intervalos se solapan parcialmente) y mantiene el ordenamiento de familias; el efecto cualitativamente relevante aparece al inspeccionar la importancia por permutación medida sobre el conjunto de validación: \texttt{mean\_customer\_seller\_distance\_km} se vuelve la variable más influyente, por encima de \texttt{estimated\_delivery\_days}, y \texttt{customer\_state} --que en el baseline actuaba como proxy geográfico-- pierde aproximadamente la mitad de su peso (Figura~\ref{fig:permutation}). Esta reorganización sustenta la interpretación de que el estado del cliente estaba absorbiendo, de forma indirecta, la señal de distancia que ahora se expresa de forma explícita.
+La incorporación de la distancia cliente-vendedor reduce ligeramente el MAE del campeón de regresión (3,98 $\to$ 3,92 días; los intervalos se solapan parcialmente) y mantiene el ordenamiento de familias; el efecto cualitativamente relevante aparece al inspeccionar la importancia por permutación medida sobre el conjunto de validación: \texttt{mean\_customer\_seller\_distance\_km} se vuelve la variable más influyente, por encima de \texttt{estimated\_delivery\_days}, mientras que \texttt{customer\_state}, que en el baseline actuaba como proxy geográfico, pierde aproximadamente la mitad de su peso (Figura~\ref{fig:permutation}). Esta reorganización sustenta la interpretación de que el estado del cliente estaba absorbiendo, de forma indirecta, la señal de distancia que ahora se expresa de forma explícita.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{permutation_importance.pdf}
-\caption{Importancia por permutación sobre el conjunto de validación (campeón de regresión, configuración principal). Se reportan las diez variables con mayor caída media del $R^2$ al permutar el predictor. La distancia promedio cliente--vendedor desplaza al estado del cliente como señal geográfica principal.}
+\caption{Importancia por permutación sobre el conjunto de validación (campeón de regresión, configuración principal). Se reportan las diez variables con mayor caída media del $R^2$ al permutar el predictor. La distancia promedio cliente-vendedor desplaza al estado del cliente como señal geográfica principal.}
 \label{fig:permutation}
 \end{figure}
 
-El cambio de criterio hacia el peor pliegue (tercera iteración) modifica dos decisiones. En regresión, desplaza al campeón de familia LinearSVR hacia Random Forest, con un costo de 0,22 días de MAE; se reporta como evidencia de que el criterio robusto no mejora la métrica principal en esta tarea. En clasificación, mantiene a Random Forest como familia ganadora pero selecciona hiperparámetros más profundos (\texttt{max\_depth=24}, \texttt{min\_samples\_leaf=2}) que mejoran la generalización al conjunto de prueba en 0,10 puntos de ROC--AUC (0,533 $\to$ 0,637), sin alcanzar aún a la logística que permanece en 0,727. La configuración principal se mantiene en la segunda iteración por su mejor MAE; el hallazgo de la tercera se discute en la Sección~V como argumento sobre la estabilidad temporal de las decisiones.
+El cambio de criterio hacia el peor pliegue (tercera iteración) modifica dos decisiones. En regresión, desplaza al campeón de familia LinearSVR hacia Random Forest, con un costo de 0,22 días de MAE; se reporta como evidencia de que el criterio robusto no mejora la métrica principal en esta tarea. En clasificación, mantiene a Random Forest como familia ganadora pero selecciona hiperparámetros más profundos (\texttt{max\_depth=24}, \texttt{min\_samples\_leaf=2}) que mejoran la generalización al conjunto de prueba en 0,10 puntos de ROC-AUC (0,533 $\to$ 0,637), sin alcanzar aún a la logística que permanece en 0,727. La configuración principal se mantiene en la segunda iteración por su mejor MAE; el hallazgo de la tercera se discute en la Sección~V como argumento sobre la estabilidad temporal de las decisiones.
 
 La Tabla~\ref{tab:campeones} detalla el desempeño del campeón final en los tres conjuntos. Se reportan también la logística y el baseline trivial de cada tarea, para hacer explícito el contraste con el que la Sección~V discute el \textit{shift} temporal.
 
@@ -234,15 +234,15 @@ La Tabla~\ref{tab:campeones} detalla el desempeño del campeón final en los tre
 \toprule
 Modelo & Train & Val. & Test & IC95\% test \\
 \midrule
-\multicolumn{5}{l}{\emph{Regresión} --- MAE (días)}\\
+\multicolumn{5}{l}{\emph{Regresión}, MAE (días)}\\
 LinearSVR (campeón) & 5,19 & 5,30 & \textbf{3,92} & [3,87; 3,98] \\
 Random Forest & 4,61 & 5,39 & 4,14 & [4,09; 4,20] \\
 Baseline mediana & 6,37 & 6,80 & 4,96 & [4,91; 5,02] \\
 \midrule
-\multicolumn{5}{l}{\emph{Clasificación} --- ROC--AUC}\\
+\multicolumn{5}{l}{\emph{Clasificación}, ROC-AUC}\\
 Random Forest (CV) & 0,900 & 0,727 & 0,533 & [0,515; 0,550] \\
 Logística & 0,692 & 0,706 & \textbf{0,727} & [0,714; 0,741] \\
-Baseline mayoritaria & 0,500 & 0,500 & 0,500 & -- \\
+Baseline mayoritaria & 0,500 & 0,500 & 0,500 & \textendash \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -260,32 +260,32 @@ El análisis individual mide la relación bivariada de cada predictor con cada s
 \label{tab:variables}
 \centering\scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{2.5cm}p{0.9cm}p{0.9cm}p{0.9cm}p{0.9cm}}
+\begin{tabular}{@{}p{3.5cm}p{0.6cm}p{0.7cm}p{0.6cm}p{0.7cm}@{}}
 \toprule
 Predictor & $|\rho|$ reg. & MI reg. & $|\rho|$ clas. & MI clas. \\
 \midrule
-\multicolumn{5}{l}{\emph{Más informativos}}\\
+\multicolumn{5}{@{}l}{\emph{Más informativos}}\\
 \texttt{estimated\_delivery\_days} & 0,52 & 0,557 & 0,05 & 0,007 \\
 \texttt{mean\_cs\_distance\_km} & 0,54 & 0,214 & 0,06 & 0,004 \\
 \texttt{customer\_city} & 0,37 & 0,186 & 0,26 & 0,029 \\
 \texttt{customer\_state} & 0,29 & 0,157 & 0,13 & 0,008 \\
 \texttt{total\_freight\_value} & 0,38 & 0,153 & 0,04 & 0,006 \\
 \midrule
-\multicolumn{5}{l}{\emph{Candidatas a eliminar (regresión)}}\\
-\texttt{mean\_product\_width\_cm} & 0,04 & 0,004 & -- & -- \\
-\texttt{sellers\_with\_coordinates} & 0,05 & 0,002 & -- & -- \\
-\texttt{seller\_count} & 0,05 & 0,001 & -- & -- \\
-\texttt{payment\_installments} & 0,05 & 0,001 & -- & -- \\
-\texttt{payment\_records} & 0,01 & 0,0004 & -- & -- \\
-\texttt{item\_count} & 0,03 & 0,00007 & -- & -- \\
+\multicolumn{5}{@{}l}{\emph{Candidatas a eliminar (regresión)}}\\
+\texttt{mean\_product\_width\_cm} & 0,04 & 0,004 & \textendash & \textendash \\
+\texttt{sellers\_with\_coordinates} & 0,05 & 0,002 & \textendash & \textendash \\
+\texttt{seller\_count} & 0,05 & 0,001 & \textendash & \textendash \\
+\texttt{payment\_installments} & 0,05 & 0,001 & \textendash & \textendash \\
+\texttt{payment\_records} & 0,01 & 0,0004 & \textendash & \textendash \\
+\texttt{item\_count} & 0,03 & 0,00007 & \textendash & \textendash \\
 \midrule
-\multicolumn{5}{l}{\emph{Candidatas a eliminar (clasificación)}}\\
-\texttt{purchase\_hour} & -- & -- & 0,01 & 0,0013 \\
-\texttt{mean\_product\_height\_cm} & -- & -- & 0,01 & 0,0012 \\
-\texttt{mean\_product\_weight\_g} & -- & -- & 0,02 & 0,0009 \\
-\texttt{product\_category\_name} & -- & -- & 0,04 & 0,0008 \\
-\texttt{payment\_installments} & -- & -- & 0,01 & 0,0006 \\
-\texttt{payment\_type} & -- & -- & 0,01 & 0,0001 \\
+\multicolumn{5}{@{}l}{\emph{Candidatas a eliminar (clasificación)}}\\
+\texttt{purchase\_hour} & \textendash & \textendash & 0,01 & 0,0013 \\
+\texttt{mean\_product\_height\_cm} & \textendash & \textendash & 0,01 & 0,0012 \\
+\texttt{mean\_product\_weight\_g} & \textendash & \textendash & 0,02 & 0,0009 \\
+\texttt{product\_category\_name} & \textendash & \textendash & 0,04 & 0,0008 \\
+\texttt{payment\_installments} & \textendash & \textendash & 0,01 & 0,0006 \\
+\texttt{payment\_type} & \textendash & \textendash & 0,01 & 0,0001 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -310,16 +310,16 @@ Modelo & MAE & RMSE & $R^2$ \\
 LinearSVR & 3,96 & 5,56 & 0,112 \\
 MLP & 4,26 & 5,78 & 0,040 \\
 \midrule
-Modelo & Bal.\ acc. & $F_1$ & ROC--AUC \\
+Modelo & Bal.\ acc. & $F_1$ & ROC-AUC \\
 \midrule
-\multicolumn{4}{l}{\emph{Clasificación} (sin PCA la mejor fue Logística, ROC--AUC 0,727)}\\
+\multicolumn{4}{l}{\emph{Clasificación} (sin PCA la mejor fue Logística, ROC-AUC 0,727)}\\
 Logística & 0,691 & 0,168 & 0,724 \\
 Random Forest & 0,499 & 0,074 & 0,594 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-En regresión, LinearSVR sobre 24 componentes logra MAE 3,96 días, apenas 0,04 días por encima de la configuración principal; el intervalo de confianza del bootstrap se solapa con el del modelo sin reducción, de modo que no hay evidencia de que la reducción degrade significativamente el error. En clasificación, la logística sobre PCA alcanza 0,724 de ROC--AUC, prácticamente idéntico al 0,727 del espacio completo, lo que muestra que la señal predictiva de retraso se concentra en pocas direcciones lineales. Random Forest, en cambio, pierde capacidad al operar sobre componentes rotados: su ROC--AUC cae a 0,594, consistente con el hecho de que los árboles explotan particiones alineadas con los ejes originales y la rotación ortogonal del PCA destruye esa estructura. La reducción lineal, por tanto, es viable para los modelos basados en márgenes o hiperplanos pero no para los basados en particiones.
+En regresión, LinearSVR sobre 24 componentes logra MAE 3,96 días, apenas 0,04 días por encima de la configuración principal; el intervalo de confianza del bootstrap se solapa con el del modelo sin reducción, de modo que no hay evidencia de que la reducción degrade significativamente el error. En clasificación, la logística sobre PCA alcanza 0,724 de ROC-AUC, prácticamente idéntico al 0,727 del espacio completo, lo que muestra que la señal predictiva de retraso se concentra en pocas direcciones lineales. Random Forest, en cambio, pierde capacidad al operar sobre componentes rotados: su ROC-AUC cae a 0,594, consistente con el hecho de que los árboles explotan particiones alineadas con los ejes originales y la rotación ortogonal del PCA destruye esa estructura. La reducción lineal, por tanto, es viable para los modelos basados en márgenes o hiperplanos pero no para los basados en particiones.
 
 \subsection{Extracción no lineal de características (UMAP)}
 \label{sec:umap}
@@ -339,7 +339,7 @@ Modelo & MAE & RMSE & $R^2$ \\
 LinearSVR & 4,44 & 5,83 & 0,025 \\
 MLP & 5,43 & 6,69 & $-$0,284 \\
 \midrule
-Modelo & Bal.\ acc. & $F_1$ & ROC--AUC \\
+Modelo & Bal.\ acc. & $F_1$ & ROC-AUC \\
 \midrule
 \multicolumn{4}{l}{\emph{Clasificación}}\\
 Logística & 0,438 & 0,063 & 0,390 \\
@@ -355,18 +355,18 @@ Random Forest & 0,492 & 0,073 & 0,435 \\
 \label{fig:umap}
 \end{figure}
 
-A diferencia de PCA, la reducción no lineal degrada sustancialmente el desempeño en las dos tareas: el MAE de LinearSVR aumenta de 3,92 a 4,44 días (+13\% relativo) y el ROC--AUC de la logística cae de 0,727 a 0,390, por debajo de la aleatoriedad. La inspección visual de la proyección a dos componentes (Figura~\ref{fig:umap}) muestra que la estructura topológica que UMAP preserva --vecindarios locales en el espacio ambiente-- no coincide con la estructura de las dos salidas: los pedidos con retraso no se concentran en regiones separables sino que se mezclan con los que llegan a tiempo. UMAP, al ser no supervisado, optimiza la fidelidad a la geometría del espacio predictor, no la separabilidad de clases; sobre un problema donde el predictor más fuerte es \texttt{estimated\_delivery\_days} (señal temporal y casi lineal con la salida), la deformación no lineal destruye esa relación. Se concluye que para este problema PCA es la reducción apropiada cuando se requiere comprimir dimensionalidad.
+A diferencia de PCA, la reducción no lineal degrada sustancialmente el desempeño en las dos tareas: el MAE de LinearSVR aumenta de 3,92 a 4,44 días (+13\% relativo) y el ROC-AUC de la logística cae de 0,727 a 0,390, por debajo de la aleatoriedad. La inspección visual de la proyección a dos componentes (Figura~\ref{fig:umap}) muestra que la estructura topológica que UMAP preserva --vecindarios locales en el espacio ambiente-- no coincide con la estructura de las dos salidas: los pedidos con retraso no se concentran en regiones separables sino que se mezclan con los que llegan a tiempo. UMAP, al ser no supervisado, optimiza la fidelidad a la geometría del espacio predictor, no la separabilidad de clases; sobre un problema donde el predictor más fuerte es \texttt{estimated\_delivery\_days} (señal temporal y casi lineal con la salida), la deformación no lineal destruye esa relación. Se concluye que para este problema PCA es la reducción apropiada cuando se requiere comprimir dimensionalidad.
 
 \section{Discusión y conclusiones}
 \label{sec:discusion}
 
-La comparación de los tres experimentos arroja tres hallazgos. Primero, la señal geográfica explícita mediante distancia de Haversine mejora marginalmente el MAE de regresión (0,06 días) pero reorganiza cualitativamente la importancia de los predictores: la distancia cliente--vendedor desplaza al estado del cliente como variable geográfica principal, lo que valida la hipótesis de que la representación espacial continua captura mejor la logística del envío que una categórica gruesa. Segundo, el criterio de selección por peor pliegue mejora la generalización dentro de la familia Random Forest en clasificación (+0,10 ROC--AUC en prueba) pero empeora la familia elegida en regresión (+0,22 días de MAE), por lo que no se adopta como criterio principal. Tercero, PCA es una reducción viable para modelos lineales y basados en márgenes (prácticamente sin pérdida con 79,5\% menos dimensiones), mientras UMAP destruye la señal predictiva por la naturaleza no supervisada de su optimización.
+La comparación de los tres experimentos arroja tres hallazgos. Primero, la señal geográfica explícita mediante distancia de Haversine mejora marginalmente el MAE de regresión (0,06 días) pero reorganiza cualitativamente la importancia de los predictores: la distancia cliente--vendedor desplaza al estado del cliente como variable geográfica principal, lo que valida la hipótesis de que la representación espacial continua captura mejor la logística del envío que una categórica gruesa. Segundo, el criterio de selección por peor pliegue mejora la generalización dentro de la familia Random Forest en clasificación (+0,10 ROC-AUC en prueba) pero empeora la familia elegida en regresión (+0,22 días de MAE), por lo que no se adopta como criterio principal. Tercero, PCA es una reducción viable para modelos lineales y basados en márgenes (prácticamente sin pérdida con 79,5\% menos dimensiones), mientras UMAP destruye la señal predictiva por la naturaleza no supervisada de su optimización.
 
-El hallazgo central del entregable, no obstante, está fuera de la comparación de métricas: existe un \textit{shift} temporal entre desarrollo y prueba que condiciona toda la clasificación. La tasa de retraso observada es 7,9\% en entrenamiento (septiembre 2016 -- marzo 2018), 11,6\% en validación (marzo -- mayo 2018) y 5,3\% en prueba (mayo -- agosto 2018). La validación sobreestima la frecuencia del evento, la prueba la subestima, y los modelos que capturan mejor el régimen de entrenamiento (como Random Forest profundo) no son los que mejor generalizan al régimen de prueba. Esto explica la discrepancia entre la familia elegida por CV --Random Forest, con ROC--AUC 0,533 en prueba-- y la logística --descartada por el criterio pero con ROC--AUC 0,727 en prueba--. El rigor metodológico obliga a reportar la decisión del criterio como campeón oficial, pero la honestidad obliga a documentar que la logística es la que mejor se habría comportado si la selección hubiera incorporado estabilidad entre regímenes temporales, no solo media del CV.
+El hallazgo central del entregable, no obstante, está fuera de la comparación de métricas: existe un \textit{shift} temporal entre desarrollo y prueba que condiciona toda la clasificación. La tasa de retraso observada es 7,9\% en entrenamiento (septiembre 2016 -- marzo 2018), 11,6\% en validación (marzo -- mayo 2018) y 5,3\% en prueba (mayo -- agosto 2018). La validación sobreestima la frecuencia del evento, la prueba la subestima, y los modelos que capturan mejor el régimen de entrenamiento (como Random Forest profundo) no son los que mejor generalizan al régimen de prueba. Esto explica la discrepancia entre la familia elegida por CV (Random Forest, con ROC-AUC 0,533 en prueba) y la logística (descartada por el criterio pero con ROC-AUC 0,727 en prueba). El rigor metodológico obliga a reportar la decisión del criterio como campeón oficial, pero la honestidad obliga a documentar que la logística es la que mejor se habría comportado si la selección hubiera incorporado estabilidad entre regímenes temporales, no solo media del CV.
 
 Tres limitaciones quedan documentadas. La ventana temporal del dataset cubre menos de dos años, insuficiente para capturar un ciclo anual completo que permita evaluar estacionalidad. El retraso se define de forma binaria respecto a la fecha estimada por el propio operador logístico, sin distinguir magnitud ni causa; un refinamiento futuro podría separar retrasos leves de incidentes graves. Finalmente, no se incorporaron variables exógenas como festivos locales, condiciones meteorológicas ni estado de la red vial, cuya inclusión es un camino natural para cerrar la brecha de generalización observada en clasificación.
 
-El artefacto resultante --tabla analítica, \textit{pipeline} reproducible, campeones con intervalos de confianza y análisis de reducción dimensional-- cumple el objetivo del entregable: entregar al operador logístico una predicción temprana de duración con MAE de 3,92 días y una predicción de riesgo de retraso cuya calibración honesta ronda ROC--AUC de 0,72 cuando se privilegia la estabilidad temporal sobre la media de la validación cruzada.
+El artefacto resultante (tabla analítica, \textit{pipeline} reproducible, campeones con intervalos de confianza y análisis de reducción dimensional) cumple el objetivo del entregable: entregar al operador logístico una predicción temprana de duración con MAE de 3,92 días y una predicción de riesgo de retraso cuya calibración honesta ronda ROC-AUC de 0,72 cuando se privilegia la estabilidad temporal sobre la media de la validación cruzada.
 
 \balance
 \bibliographystyle{IEEEtran}
