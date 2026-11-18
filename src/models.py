@@ -43,28 +43,34 @@ def model_catalog(task: str, random_state: int) -> dict[str, tuple[Any, dict[str
                 DummyRegressor(strategy="median"),
                 {"strategy": ["median"]},
             ),
-            "Ridge (parametrico)": (Ridge(solver="lsqr"), {"alpha": [0.1, 10.0]}),
+            "Ridge (parametrico)": (
+                Ridge(solver="lsqr"),
+                {"alpha": [0.1, 1.0, 10.0]},
+            ),
             "KNN (no parametrico)": (
                 KNeighborsRegressor(n_jobs=-1),
-                {"n_neighbors": [7, 25], "weights": ["distance"]},
+                {"n_neighbors": [7, 15, 31], "weights": ["distance"]},
             ),
             "Random Forest (ensamble)": (
                 RandomForestRegressor(
-                    n_estimators=120, n_jobs=-1, random_state=random_state
+                    n_estimators=200, n_jobs=-1, random_state=random_state
                 ),
-                {"max_depth": [12, None], "min_samples_leaf": [2]},
+                {"max_depth": [12, 24, None], "min_samples_leaf": [1, 2, 5]},
             ),
             "MLP (red neuronal)": (
                 MLPRegressor(
-                    max_iter=180,
+                    max_iter=200,
                     early_stopping=True,
                     random_state=random_state,
                 ),
-                {"hidden_layer_sizes": [(48,), (64, 32)], "alpha": [0.0001]},
+                {
+                    "hidden_layer_sizes": [(48,), (64, 32), (64, 32, 16)],
+                    "alpha": [0.0001, 0.001],
+                },
             ),
             "LinearSVR (SVM)": (
                 LinearSVR(max_iter=6_000, random_state=random_state),
-                {"C": [0.1, 1.0], "epsilon": [0.1]},
+                {"C": [0.1, 1.0, 10.0], "epsilon": [0.1, 1.0]},
             ),
         }
     if task == "classification":
@@ -77,34 +83,37 @@ def model_catalog(task: str, random_state: int) -> dict[str, tuple[Any, dict[str
                 LogisticRegression(
                     max_iter=1_000, class_weight="balanced", random_state=random_state
                 ),
-                {"C": [0.2, 2.0]},
+                {"C": [0.1, 1.0, 10.0]},
             ),
             "KNN (no parametrico)": (
                 KNeighborsClassifier(n_jobs=-1),
-                {"n_neighbors": [9, 31], "weights": ["distance"]},
+                {"n_neighbors": [9, 21, 41], "weights": ["distance"]},
             ),
             "Random Forest (ensamble)": (
                 RandomForestClassifier(
-                    n_estimators=120,
+                    n_estimators=200,
                     n_jobs=-1,
                     class_weight="balanced_subsample",
                     random_state=random_state,
                 ),
-                {"max_depth": [12, None], "min_samples_leaf": [2]},
+                {"max_depth": [12, 24, None], "min_samples_leaf": [1, 2, 5]},
             ),
             "MLP (red neuronal)": (
                 MLPClassifier(
-                    max_iter=180,
+                    max_iter=200,
                     early_stopping=True,
                     random_state=random_state,
                 ),
-                {"hidden_layer_sizes": [(48,), (64, 32)], "alpha": [0.0001]},
+                {
+                    "hidden_layer_sizes": [(48,), (64, 32), (64, 32, 16)],
+                    "alpha": [0.0001, 0.001],
+                },
             ),
             "LinearSVC (SVM)": (
                 LinearSVC(
                     class_weight="balanced", max_iter=6_000, random_state=random_state
                 ),
-                {"C": [0.1, 1.0]},
+                {"C": [0.1, 1.0, 10.0]},
             ),
         }
     raise ValueError("task debe ser 'regression' o 'classification'.")

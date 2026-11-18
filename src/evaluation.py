@@ -20,10 +20,12 @@ from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
+from scipy.stats import t as student_t
 from sklearn.base import clone
 from sklearn.decomposition import PCA
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import (
+    average_precision_score,
     balanced_accuracy_score,
     f1_score,
     mean_absolute_error,
@@ -65,6 +67,7 @@ def _classification_metrics(
         "recall": recall_score(y_true, prediction, zero_division=0),
         "F1": f1_score(y_true, prediction, zero_division=0),
         "ROC_AUC": roc_auc_score(y_true, score),
+        "avg_precision": average_precision_score(y_true, score),
     }
 
 
@@ -118,13 +121,16 @@ def tune_models(
             mean_score = float(np.mean(fold_scores))
             worst_score = float(np.min(fold_scores))
             standard_error = float(np.std(fold_scores, ddof=1) / sqrt(len(fold_scores)))
+            # Con pocos pliegues (k pequeño) el IC gaussiano z=1.96 subestima la
+            # incertidumbre; t-Student con df=k-1 es la corrección estándar.
+            t_critical = float(student_t.ppf(0.975, df=max(len(fold_scores) - 1, 1)))
             row: dict[str, Any] = {
                 "model": family,
                 "params": params,
                 "primary_cv_mean": mean_score,
                 "primary_cv_worst": worst_score,
-                "primary_cv_ci95_low": mean_score - 1.96 * standard_error,
-                "primary_cv_ci95_high": mean_score + 1.96 * standard_error,
+                "primary_cv_ci95_low": mean_score - t_critical * standard_error,
+                "primary_cv_ci95_high": mean_score + t_critical * standard_error,
                 "fit_seconds": perf_counter() - started,
             }
             for metric_name in fold_metric_rows[0]:

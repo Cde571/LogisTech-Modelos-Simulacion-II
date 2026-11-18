@@ -163,6 +163,10 @@ def build_order_level_dataset(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 def predictor_columns(dataset: pd.DataFrame) -> list[str]:
     """Devuelve el conjunto inicial de variables conocidas al comprar."""
+    # purchase_year se excluye a propósito: con partición cronológica 60/20/20
+    # el año casi coincide con el split (test queda dominado por 2018) y pasa a
+    # actuar como indicador de partición en vez de predictor; la estacionalidad
+    # ya queda captada por mes, día de la semana y hora.
     candidates = [
         "customer_city",
         "customer_state",
@@ -179,7 +183,6 @@ def predictor_columns(dataset: pd.DataFrame) -> list[str]:
         "mean_product_length_cm",
         "mean_product_height_cm",
         "mean_product_width_cm",
-        "purchase_year",
         "purchase_month",
         "purchase_dayofweek",
         "purchase_hour",
