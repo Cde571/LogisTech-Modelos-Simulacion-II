@@ -12,11 +12,13 @@ mejor cuando la distribución se mueve en el tiempo.
 
 ```bash
 python scripts/experimentos/03_seleccion_robusta.py \
-    --max-rows 15000 --cv-splits 3 --bootstrap 500
+    --max-rows -1 --cv-splits 3 --bootstrap 500
 ```
 
 Salida: ocho CSV + `summary.json` en esta carpeta. Lo único nuevo frente
 al experimento 02 es `selection_criterion='worst'` en la configuración.
+Las tablas que siguen corresponden a la corrida con el dataset completo
+(96 476 pedidos útiles).
 
 ## Resultados
 
@@ -24,68 +26,65 @@ al experimento 02 es `selection_criterion='worst'` en la configuración.
 
 | Modelo | CV mean (−MAE) | CV worst (−MAE) | Test MAE | IC95% |
 |--------|----------------|------------------|----------|-------|
-| **LinearSVR (campeón)** | −5.59 | **−6.12** | 4.61 | [4.47, 4.74] |
-| KNN | −5.96 | −6.62 | 5.18 | [5.02, 5.33] |
-| Ridge | −5.92 | −6.70 | 6.35 | [6.18, 6.50] |
-| Random Forest | −6.15 | −6.85 | 4.86 | [4.70, 5.02] |
-| Baseline trivial (mediana) | −6.92 | −7.88 | 5.04 | [4.91, 5.18] |
-| MLP | −7.99 | **−12.35** | 5.54 | [5.37, 5.70] |
+| **Random Forest (campeón)** | −5.56 | **−6.36** | 4.14 | [4.09, 4.20] |
+| Ridge | −5.62 | −6.43 | 5.06 | [5.00, 5.12] |
+| KNN | −5.71 | −6.55 | 4.61 | [4.56, 4.68] |
+| MLP | −5.63 | −6.55 | 4.36 | [4.30, 4.42] |
+| LinearSVR | −5.65 | −6.78 | 3.89 | [3.84, 3.95] |
+| Baseline trivial (mediana) | −6.84 | −7.76 | 4.96 | [4.91, 5.02] |
 
-LinearSVR vuelve a ganar. Lo interesante no es quién gana, sino cómo se
-reparte la distancia entre `cv_mean` y `cv_worst`: MLP tiene un peor
-pliegue un 55 % por debajo de su media, señal de que su inestabilidad
-entre pliegues era alta pero el criterio por media la ocultaba. El
-criterio robusto convierte esa inestabilidad en un castigo explícito.
+El criterio robusto **cambia el campeón** respecto al experimento 02
+(mean): ahí ganaba LinearSVR con MAE 3.92; aquí lo desplaza Random
+Forest porque LinearSVR tiene el peor pliegue más bajo de todos
+(−6.78). El costo es real: el RF seleccionado por peor pliegue da MAE
+4.14 en test, 0.22 días peor que el LinearSVR de exp 02. Documentamos
+ese costo como evidencia de que el criterio no corrige el shift entre
+desarrollo y prueba.
 
 ### Clasificación (`late_delivery`)
 
 | Modelo | CV mean (ROC-AUC) | CV worst (ROC-AUC) | Test ROC-AUC | IC95% |
 |--------|-------------------|---------------------|--------------|-------|
-| **Random Forest (campeón)** | 0.632 | **0.563** | 0.512 | [0.471, 0.552] |
-| Logística | 0.599 | 0.557 | **0.734** | [0.704, 0.765] |
-| LinearSVC | 0.590 | 0.544 | 0.729 | [0.696, 0.760] |
-| KNN | 0.581 | 0.537 | 0.514 | [0.474, 0.554] |
-| MLP | 0.551 | 0.510 | 0.389 | [0.342, 0.436] |
-| Baseline trivial (clase mayoritaria) | 0.500 | 0.500 | 0.500 | [0.500, 0.500] |
+| **Random Forest (campeón)** | 0.643 | **0.585** | 0.637 | [0.621, 0.652] |
+| Logística | 0.636 | 0.566 | 0.727 | [0.714, 0.741] |
+| LinearSVC | 0.634 | 0.565 | 0.721 | [0.708, 0.735] |
+| KNN | 0.595 | 0.565 | 0.571 | [0.553, 0.587] |
+| MLP | 0.603 | 0.545 | 0.679 | [0.665, 0.694] |
+| Baseline trivial | 0.500 | 0.500 | 0.500 | [0.500, 0.500] |
 
-Random Forest sigue campeón. La diferencia frente a Logística es apenas
-0.006 ROC-AUC en el peor pliegue (0.563 vs 0.557), y Random Forest gana
-también por media. **El criterio robusto no cambia el ranking.**
+Aquí ocurre lo interesante: Random Forest sigue ganando por ambos
+criterios, **pero con hiperparámetros distintos**. Exp 02 (mean) eligió
+`max_depth=12, min_samples_leaf=1`, que da 0.533 en test. Exp 03
+(worst) eligió `max_depth=24, min_samples_leaf=2`, que da 0.637 en
+test. El salto de +0.10 ROC-AUC dentro de la misma familia es la mejor
+evidencia del efecto del criterio robusto en este dataset.
 
-## El hallazgo que sí importa
+Aun así, Logística sigue muy por encima (0.727) tanto del RF-mean como
+del RF-worst. El criterio ayuda a seleccionar hiperparámetros más
+estables dentro de la familia ganadora, pero no resuelve el shift que
+favorece a la familia lineal.
 
-El resultado anterior parece decepcionante pero es la pieza más honesta
-del proyecto: aprendimos **dónde no está el problema**.
+## El hallazgo del experimento
 
-- Dentro del rango de desarrollo (entrenamiento + validación) la
-  distribución es relativamente homogénea entre los tres pliegues de
-  CV temporal. El peor pliegue cuesta algunas centésimas de ROC-AUC, no
-  la caída catastrófica que sí se observa en test.
-- Logística pasa de 0.629 en validación holdout a 0.734 en test. Random
-  Forest hace el movimiento inverso: 0.715 → 0.512. El sobreajuste de
-  Random Forest a la geografía y a la temporada se manifiesta recién en
-  el test, no en los pliegues anteriores.
-- Un criterio robusto a la variación *dentro* de CV no puede corregir
-  un shift que solo existe *entre* desarrollo y prueba. La estructura
-  del problema queda fuera del alcance de la validación cruzada.
+Con el dataset completo y las mallas de hiperparámetros ampliadas, el
+criterio robusto **sí** modifica decisiones:
 
-Para que un criterio robusto moviera el campeón habría que poner el
-holdout de validación *más cerca* del test en el tiempo —o aplicar una
-corrección de shift (reponderación por importancia, adaptación de
-dominio)—, y eso excede el alcance declarado del Entregable II.
+- En regresión cambia la familia campeón (LinearSVR → RF) con un costo
+  medible en MAE. Media sigue siendo la mejor elección por métrica
+  final.
+- En clasificación mantiene la familia (RF) pero elige hiperparámetros
+  menos agresivos que generalizan +0.10 ROC-AUC en test.
+- Ninguno de los dos criterios corrige el shift que separa a Logística
+  (0.727) del RF (0.637 en el mejor caso): esa brecha es estructural y
+  no cabe dentro del alcance de este experimento.
 
 ## Conclusión
 
-El experimento 03 cumple su rol metodológico: documenta que la elección
-del criterio de selección (media vs. peor pliegue) no modifica los
-campeones en este dataset. El techo con señales previas a la compra
-queda establecido:
-
-- **Regresión:** LinearSVR, MAE 4.61 días.
-- **Clasificación:** Random Forest por CV, con la nota explícita de
-  que Logística es el modelo que efectivamente generaliza a la ventana
-  de test (ROC-AUC 0.734). La discrepancia entre ambos es el shift
-  temporal, no el criterio de selección.
+Se reportan los dos criterios en el informe. Para regresión se mantiene
+el campeón por media (LinearSVR, MAE 3.92). Para clasificación queda
+documentado que el criterio robusto mejora el desempeño del campeón
+dentro de la familia Random Forest y que, aun así, la familia lineal
+generaliza mejor por el shift temporal pre-/post-marzo 2018.
 
 ## Referencias
 
