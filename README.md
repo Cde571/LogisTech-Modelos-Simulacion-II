@@ -67,7 +67,9 @@ tamaño; instrucciones de descarga en [`data/README.md`](data/README.md).
 │   │   ├── 02_distancia_geografica.py    # añade distancia cliente-vendedor
 │   │   └── 03_seleccion_robusta.py       # criterio robusto (peor pliegue CV)
 │   ├── analisis/
-│   │   └── tasa_retraso_por_particion.py # reporta el shift temporal
+│   │   ├── tasa_retraso_por_particion.py # reporta el shift temporal
+│   │   ├── figuras_informe.py            # genera las 4 figuras del informe
+│   │   └── reductions_train_val.py       # regenera las reducciones con train/val/test
 │   └── generate_report_figures.py
 ├── outputs/                              # resultados locales (CSV + README)
 │   ├── entregable_ii/                    # resultado FINAL (el que se califica)
