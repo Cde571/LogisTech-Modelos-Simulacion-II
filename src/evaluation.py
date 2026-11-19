@@ -291,6 +291,21 @@ def feature_analysis(
     ).sort_values("importance_mean", ascending=False).reset_index(drop=True)
 
 
+def _reduced_scores(estimator: Any, X: np.ndarray, prediction: np.ndarray) -> np.ndarray:
+    if hasattr(estimator, "predict_proba"):
+        return estimator.predict_proba(X)[:, 1]
+    if hasattr(estimator, "decision_function"):
+        return estimator.decision_function(X)
+    return prediction.astype(float)
+
+
+def _reduced_metrics(task: str, y_true: pd.Series, estimator: Any, X: np.ndarray) -> dict[str, float]:
+    prediction = estimator.predict(X)
+    if task == "regression":
+        return _regression_metrics(y_true, prediction)
+    return _classification_metrics(y_true, prediction, _reduced_scores(estimator, X, prediction))
+
+
 def reduction_comparison(
     task: str,
     parts: dict[str, Any],
@@ -298,7 +313,7 @@ def reduction_comparison(
     best: dict[str, dict[str, Any]],
     config: ExperimentConfig,
 ) -> pd.DataFrame:
-    """Evalua PCA y UMAP con los dos mejores modelos del holdout de validacion."""
+    """Evalua PCA y UMAP con los dos mejores modelos sobre train, validacion y prueba."""
     try:
         from umap import UMAP
     except ImportError as error:
@@ -310,57 +325,73 @@ def reduction_comparison(
     )["model"].head(2).tolist()
     X_development = pd.concat([parts["X_train"], parts["X_validation"]])
     y_development = pd.concat([parts["y_train"], parts["y_validation"]])
-    base_preprocessor = make_preprocessor(X_development, config)
-    X_dev = base_preprocessor.fit_transform(X_development)
-    X_test = base_preprocessor.transform(parts["X_test"])
-    feature_count = X_dev.shape[1]
 
-    pca_full = PCA(random_state=config.random_state).fit(X_dev)
+    train_preprocessor = make_preprocessor(parts["X_train"], config)
+    X_train_mat = train_preprocessor.fit_transform(parts["X_train"])
+    X_validation_mat = train_preprocessor.transform(parts["X_validation"])
+
+    dev_preprocessor = make_preprocessor(X_development, config)
+    X_dev_mat = dev_preprocessor.fit_transform(X_development)
+    X_test_mat = dev_preprocessor.transform(parts["X_test"])
+
+    feature_count = X_dev_mat.shape[1]
+    pca_full = PCA(random_state=config.random_state).fit(X_dev_mat)
     n_pca = int(np.searchsorted(np.cumsum(pca_full.explained_variance_ratio_), 0.95) + 1)
     n_pca = max(2, min(n_pca, feature_count))
-    reducers: dict[str, Any] = {
-        "PCA_95pct": PCA(n_components=n_pca, random_state=config.random_state),
-        "UMAP_10d": UMAP(
-            n_components=min(10, feature_count - 1),
-            n_neighbors=20,
-            min_dist=0.1,
-            metric="euclidean",
-            random_state=config.random_state,
-            n_jobs=1,
-        ),
-    }
+
+    def _build_reducers() -> dict[str, Any]:
+        return {
+            "PCA_95pct": PCA(n_components=n_pca, random_state=config.random_state),
+            "UMAP_10d": UMAP(
+                n_components=min(10, feature_count - 1),
+                n_neighbors=20,
+                min_dist=0.1,
+                metric="euclidean",
+                random_state=config.random_state,
+                n_jobs=1,
+            ),
+        }
+
     rows: list[dict[str, Any]] = []
-    for reducer_name, reducer in reducers.items():
-        fit_limit = min(10_000, len(X_dev)) if reducer_name.startswith("UMAP") else len(X_dev)
-        fit_index = np.linspace(0, len(X_dev) - 1, fit_limit, dtype=int)
-        reducer.fit(X_dev[fit_index])
-        reduced_dev = reducer.transform(X_dev)
-        reduced_test = reducer.transform(X_test)
+    train_reducers = _build_reducers()
+    dev_reducers = _build_reducers()
+    for reducer_name in train_reducers:
+        fit_limit_train = min(10_000, len(X_train_mat)) if reducer_name.startswith("UMAP") else len(X_train_mat)
+        train_index = np.linspace(0, len(X_train_mat) - 1, fit_limit_train, dtype=int)
+        train_reducer = train_reducers[reducer_name]
+        train_reducer.fit(X_train_mat[train_index])
+        reduced_train = train_reducer.transform(X_train_mat)
+        reduced_validation = train_reducer.transform(X_validation_mat)
+
+        fit_limit_dev = min(10_000, len(X_dev_mat)) if reducer_name.startswith("UMAP") else len(X_dev_mat)
+        dev_index = np.linspace(0, len(X_dev_mat) - 1, fit_limit_dev, dtype=int)
+        dev_reducer = dev_reducers[reducer_name]
+        dev_reducer.fit(X_dev_mat[dev_index])
+        reduced_dev = dev_reducer.transform(X_dev_mat)
+        reduced_test = dev_reducer.transform(X_test_mat)
+
         for family in top_models:
-            estimator = clone(best[family]["estimator"]).set_params(**best[family]["params"])
-            estimator.fit(reduced_dev, y_development)
-            prediction = estimator.predict(reduced_test)
-            metrics = (
-                _regression_metrics(parts["y_test"], prediction)
-                if task == "regression"
-                else _classification_metrics(
-                    parts["y_test"],
-                    prediction,
-                    estimator.predict_proba(reduced_test)[:, 1]
-                    if hasattr(estimator, "predict_proba")
-                    else estimator.decision_function(reduced_test)
-                    if hasattr(estimator, "decision_function")
-                    else prediction.astype(float),
-                )
-            )
-            rows.append(
-                {
-                    "reduction": reducer_name,
-                    "model": family,
-                    "original_features": feature_count,
-                    "reduced_features": reduced_dev.shape[1],
-                    "reduction_pct": 100 * (1 - reduced_dev.shape[1] / feature_count),
-                    **metrics,
-                }
-            )
+            selection_estimator = clone(best[family]["estimator"]).set_params(**best[family]["params"])
+            selection_estimator.fit(reduced_train, parts["y_train"])
+            train_metrics = _reduced_metrics(task, parts["y_train"], selection_estimator, reduced_train)
+            validation_metrics = _reduced_metrics(task, parts["y_validation"], selection_estimator, reduced_validation)
+
+            final_estimator = clone(best[family]["estimator"]).set_params(**best[family]["params"])
+            final_estimator.fit(reduced_dev, y_development)
+            test_metrics = _reduced_metrics(task, parts["y_test"], final_estimator, reduced_test)
+
+            row: dict[str, Any] = {
+                "reduction": reducer_name,
+                "model": family,
+                "original_features": feature_count,
+                "reduced_features": reduced_dev.shape[1],
+                "reduction_pct": 100 * (1 - reduced_dev.shape[1] / feature_count),
+            }
+            for split_name, metrics in (
+                ("train", train_metrics),
+                ("validation", validation_metrics),
+                ("test", test_metrics),
+            ):
+                row.update({f"{split_name}_{name}": value for name, value in metrics.items()})
+            rows.append(row)
     return pd.DataFrame(rows)
