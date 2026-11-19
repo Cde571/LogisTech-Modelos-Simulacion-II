@@ -295,31 +295,31 @@ En regresión, las candidatas se concentran en atributos agregados del paquete (
 \subsection{Extracción lineal de características (PCA)}
 \label{sec:pca}
 
-Se aplicó el análisis de componentes principales (PCA) sobre la matriz estandarizada de 117 predictores (tras \textit{one-hot} de categóricas y Haversine) con el criterio de varianza explicada acumulada de 95\%, elegido por ser un umbral estándar en la literatura~\cite{wolter2024} y por conservar casi toda la señal mientras reduce agresivamente la dimensión. El resultado son 24 componentes, es decir una reducción del 79,5\%. Se reevaluaron los dos mejores modelos de cada tarea sobre el espacio transformado; la Tabla~\ref{tab:pca} reporta las métricas sobre prueba.
+Se aplicó el análisis de componentes principales (PCA) sobre la matriz estandarizada de 117 predictores (tras \textit{one-hot} de categóricas y Haversine) con el criterio de varianza explicada acumulada de 95\%, elegido por ser un umbral estándar en la literatura~\cite{wolter2024} y por conservar casi toda la señal mientras reduce agresivamente la dimensión. El resultado son 24 componentes, es decir una reducción del 79,5\%. Se reevaluaron los dos mejores modelos de cada tarea sobre el espacio transformado; la Tabla~\ref{tab:pca} reporta las métricas en las tres particiones.
 
 \begin{table}[t]
-\caption{Reevaluación sobre prueba de los dos mejores modelos tras PCA al 95\% de varianza (117 $\to$ 24 componentes, reducción 79,5\%).}
+\caption{Reevaluación en train, validación y prueba de los dos mejores modelos tras PCA al 95\% de varianza (117 $\to$ 24 componentes, reducción 79,5\%). La métrica es MAE en días para regresión y ROC-AUC para clasificación.}
 \label{tab:pca}
 \centering\scriptsize
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{p{2.2cm}p{0.9cm}p{0.9cm}p{0.9cm}}
+\begin{tabular}{p{2.6cm}p{0.9cm}p{1.1cm}p{0.9cm}}
 \toprule
-Modelo & MAE & RMSE & $R^2$ \\
+Modelo & Train & Validación & Prueba \\
 \midrule
-\multicolumn{4}{l}{\emph{Regresión} (sin PCA el mejor fue LinearSVR, MAE 3,92)}\\
-LinearSVR & 3,96 & 5,56 & 0,112 \\
-MLP & 4,26 & 5,78 & 0,040 \\
+\multicolumn{4}{l}{\emph{Regresión} (MAE)}\\
+LinearSVR sin PCA      & 5,19 & 5,30 & 3,92 \\
+LinearSVR tras PCA     & 5,27 & 5,36 & 3,96 \\
+MLP tras PCA           & 5,31 & 5,26 & 4,26 \\
 \midrule
-Modelo & Bal.\ acc. & $F_1$ & ROC-AUC \\
-\midrule
-\multicolumn{4}{l}{\emph{Clasificación} (sin PCA la mejor fue Logística, ROC-AUC 0,727)}\\
-Logística & 0,691 & 0,168 & 0,724 \\
-Random Forest & 0,499 & 0,074 & 0,594 \\
+\multicolumn{4}{l}{\emph{Clasificación} (ROC-AUC)}\\
+Logística sin PCA      & 0,692 & 0,706 & 0,727 \\
+Logística tras PCA     & 0,677 & 0,713 & 0,724 \\
+Random Forest tras PCA & 0,940 & 0,693 & 0,594 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-En regresión, LinearSVR sobre 24 componentes logra MAE 3,96 días, apenas 0,04 días por encima de la configuración principal; el intervalo de confianza del bootstrap se solapa con el del modelo sin reducción, de modo que no hay evidencia de que la reducción degrade significativamente el error. En clasificación, la logística sobre PCA alcanza 0,724 de ROC-AUC, prácticamente idéntico al 0,727 del espacio completo, lo que muestra que la señal predictiva de retraso se concentra en pocas direcciones lineales. Random Forest, en cambio, pierde capacidad al operar sobre componentes rotados: su ROC-AUC cae a 0,594, consistente con el hecho de que los árboles explotan particiones alineadas con los ejes originales y la rotación ortogonal del PCA destruye esa estructura. La reducción lineal, por tanto, es viable para los modelos basados en márgenes o hiperplanos pero no para los basados en particiones.
+En regresión, LinearSVR sobre 24 componentes muestra un perfil casi idéntico al modelo sin reducción en los tres splits (MAE train 5,27 vs.\ 5,19; validación 5,36 vs.\ 5,30; prueba 3,96 vs.\ 3,92). La diferencia sobre prueba es de apenas 0,04 días y el intervalo bootstrap del campeón se solapa con el del modelo sin reducción, de modo que no hay evidencia de que PCA degrade significativamente el error. En clasificación, la logística con PCA conserva la estabilidad entre particiones (0,677 / 0,713 / 0,724) y reproduce el ROC-AUC de prueba del espacio completo, lo que muestra que la señal predictiva de retraso se concentra en pocas direcciones lineales. Random Forest, en cambio, pierde capacidad al operar sobre componentes rotados: su desempeño cae de 0,940 en train a 0,594 en prueba. El perfil de sobreajuste se agrava respecto al espacio original (train 0,900 $\to$ prueba 0,533) porque la rotación ortogonal del PCA destruye las particiones alineadas con los ejes que los árboles explotan. La reducción lineal, por tanto, es viable para los modelos basados en márgenes o hiperplanos pero no para los basados en particiones.
 
 \subsection{Extracción no lineal de características (UMAP)}
 \label{sec:umap}
@@ -327,23 +327,23 @@ En regresión, LinearSVR sobre 24 componentes logra MAE 3,96 días, apenas 0,04 
 Se aplicó \textit{Uniform Manifold Approximation and Projection}~\cite{mcinnes2018umap} sobre los mismos 117 predictores, con 10 componentes, \texttt{n\_neighbors=20} y \texttt{min\_dist=0{,}1}. El número de componentes se eligió como mínimo útil para no perder estructura global en modelos supervisados (el escenario clásico de 2 dimensiones es útil para visualización pero insuficiente para predicción) y como máximo que mantuviese el tiempo de cómputo manejable sobre el dataset completo. La reducción resulta del 91,5\%. Para evitar fuga de información, el ajuste se realiza de forma no supervisada: la etiqueta nunca se pasa a \texttt{.fit}, de acuerdo con la observación metodológica estándar sobre reductores que admiten modo supervisado. La Tabla~\ref{tab:umap} resume el desempeño.
 
 \begin{table}[t]
-\caption{Reevaluación sobre prueba de los dos mejores modelos tras UMAP a 10 componentes (reducción 91,5\%). El ajuste se hizo sin etiqueta para preservar la validez de la medición.}
+\caption{Reevaluación en train, validación y prueba de los dos mejores modelos tras UMAP a 10 componentes (reducción 91,5\%). El ajuste se hizo sin etiqueta para preservar la validez de la medición. La métrica es MAE en días para regresión y ROC-AUC para clasificación.}
 \label{tab:umap}
 \centering\scriptsize
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{p{2.2cm}p{0.9cm}p{0.9cm}p{0.9cm}}
+\begin{tabular}{p{2.6cm}p{0.9cm}p{1.1cm}p{0.9cm}}
 \toprule
-Modelo & MAE & RMSE & $R^2$ \\
+Modelo & Train & Validación & Prueba \\
 \midrule
-\multicolumn{4}{l}{\emph{Regresión}}\\
-LinearSVR & 4,44 & 5,83 & 0,025 \\
-MLP & 5,43 & 6,69 & $-$0,284 \\
+\multicolumn{4}{l}{\emph{Regresión} (MAE)}\\
+LinearSVR sin UMAP      & 5,19 & 5,30 & 3,92 \\
+LinearSVR tras UMAP     & 5,63 & 5,77 & 4,44 \\
+MLP tras UMAP           & 5,80 & 5,96 & 5,43 \\
 \midrule
-Modelo & Bal.\ acc. & $F_1$ & ROC-AUC \\
-\midrule
-\multicolumn{4}{l}{\emph{Clasificación}}\\
-Logística & 0,438 & 0,063 & 0,390 \\
-Random Forest & 0,492 & 0,073 & 0,435 \\
+\multicolumn{4}{l}{\emph{Clasificación} (ROC-AUC)}\\
+Logística sin UMAP      & 0,692 & 0,706 & 0,727 \\
+Logística tras UMAP     & 0,616 & 0,635 & 0,390 \\
+Random Forest tras UMAP & 0,889 & 0,619 & 0,435 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -355,7 +355,7 @@ Random Forest & 0,492 & 0,073 & 0,435 \\
 \label{fig:umap}
 \end{figure}
 
-A diferencia de PCA, la reducción no lineal degrada sustancialmente el desempeño en las dos tareas: el MAE de LinearSVR aumenta de 3,92 a 4,44 días (+13\% relativo) y el ROC-AUC de la logística cae de 0,727 a 0,390, por debajo de la aleatoriedad. La inspección visual de la proyección a dos componentes (Figura~\ref{fig:umap}) muestra que la estructura topológica que UMAP preserva --vecindarios locales en el espacio ambiente-- no coincide con la estructura de las dos salidas: los pedidos con retraso no se concentran en regiones separables sino que se mezclan con los que llegan a tiempo. UMAP, al ser no supervisado, optimiza la fidelidad a la geometría del espacio predictor, no la separabilidad de clases; sobre un problema donde el predictor más fuerte es \texttt{estimated\_delivery\_days} (señal temporal y casi lineal con la salida), la deformación no lineal destruye esa relación. Se concluye que para este problema PCA es la reducción apropiada cuando se requiere comprimir dimensionalidad.
+A diferencia de PCA, la reducción no lineal degrada sustancialmente el desempeño en las dos tareas y en los tres splits: el MAE de LinearSVR aumenta en toda la secuencia (5,63 / 5,77 / 4,44 frente al 5,19 / 5,30 / 3,92 del espacio completo, un +13\% relativo sobre prueba) y el ROC-AUC de la logística cae a 0,616 / 0,635 / 0,390, dejando al modelo por debajo de la aleatoriedad en la partición más reciente. La degradación aparece ya en train, lo que confirma que no es un problema de generalización sino que UMAP destruye la señal antes de que el modelo aprenda. La inspección visual de la proyección a dos componentes (Figura~\ref{fig:umap}) muestra que la estructura topológica que UMAP preserva, vecindarios locales en el espacio ambiente, no coincide con la estructura de las dos salidas: los pedidos con retraso no se concentran en regiones separables sino que se mezclan con los que llegan a tiempo. UMAP, al ser no supervisado, optimiza la fidelidad a la geometría del espacio predictor, no la separabilidad de clases; sobre un problema donde el predictor más fuerte es \texttt{estimated\_delivery\_days} (señal temporal y casi lineal con la salida), la deformación no lineal destruye esa relación. Se concluye que para este problema PCA es la reducción apropiada cuando se requiere comprimir dimensionalidad.
 
 \section{Discusión y conclusiones}
 \label{sec:discusion}
