@@ -74,9 +74,13 @@ tamaño; instrucciones de descarga en [`data/README.md`](data/README.md).
 ├── outputs/                              # resultados locales (CSV + README)
 │   ├── entregable_ii/                    # resultado FINAL (el que se califica)
 │   └── experimentos/                     # intentos aislados con su README
-│       └── 01_baseline_pre_compra/
+│       ├── 01_baseline_pre_compra/
+│       ├── 02_distancia_geografica/
+│       └── 03_seleccion_robusta/
 └── tests/
     ├── test_pipeline.py                  # integridad de piezas
+    ├── test_geography.py                 # distancia Haversine y cobertura
+    ├── test_variable_analysis.py         # correlación, MI y candidatas
     └── test_smoke.py                     # end-to-end con SMOKE=1
 ```
 
